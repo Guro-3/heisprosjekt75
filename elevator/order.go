@@ -4,24 +4,25 @@ import "Driver-go/elevio"
 
 
 func addOrder()
-func cabOrdersHere()
+
+func cabOrdersHere(elevator *Elevator){
+	return elevator.orderMatrix[elevator.currentFloor][elevio.BT_Cab]
+}
+
+
 
 
 // sjekke om det er en hallOrder opp i etasjen vi er i elevator er selve heisen, innholder, etasje vi er i og direction vi beveger oss i og order matrix
 func hallOrderUPHere(elevator *Elevator)bool{
-	if elevator.orderMatrix[elevator.currentFloor][elevio.BT_HallUp]{
-		return true
-	}
-	return false
+	return elevator.orderMatrix[elevator.currentFloor][elevio.BT_HallUp]
+	
 }
 
 // sjekke om det er en hallOrder ned i etasjen vi er i elevator er selve heisen, innholder, etasje vi er i og direction vi beveger oss i og order matrix
 func hallOrderDownHere(elevator *Elevator)bool{
-	if elevator.orderMatrix[elevator.currentFloor][elevio.BT_HallDown]{
-		return true
-	}
-	return false
+	return elevator.orderMatrix[elevator.currentFloor][elevio.BT_HallDown]
 }
+	
 // sjekke om det er en ordre over der vi er i etasjen vi er i elevator er selve heisen, innholder, etasje vi er i og direction vi beveger oss i og order matrix
 func orderBelow(elevator *Elevator)bool{
 	for f := elevator.currentFloor - 1; f>= 0; f--{
