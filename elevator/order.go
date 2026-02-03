@@ -1,9 +1,20 @@
 package elevator
 
-import "Driver-go/elevio"
+import (
+	"Driver-go/elevio"
+	"fmt"
+)
 
-
-func addOrder()
+func addOrder(e *Elevator, btnFloor int, btn elevio.ButtonType) {
+	switch btn {
+	case elevio.BT_Cab:
+		e.cabOrderMatrix[btnFloor][0] = true
+	case elevio.BT_HallUp:
+		e.HallorderMatrix[btnFloor][elevio.BT_HallUp] = true
+	case elevio.BT_HallDown:
+		e.HallorderMatrix[btnFloor][elevio.BT_HallDown] = true
+	}
+}
 
 // sjekker er det en caborder
 func cabOrdersHere(e *Elevator) bool {
@@ -57,16 +68,20 @@ func orderAbove(e *Elevator) bool {
 
 //logikk for å velge retning
 func chooseDirection(e *Elevator) (elevio.MotorDirection, elevatorState) {
+	fmt.Print("We are now in choosDirection func, moving to switch case \n")
 	switch e.dir {
-// hvis retning er opp, sjekke om det finnes noen ordre over meg så vil jeg fortsette oppover
+
 	case elevio.MD_Up:
-		if orderAbove(e) {
-			return elevio.MD_Up, moving
-		}
+		fmt.Print("Elevator is moving up \n")
 // hvis retning er opp, sjekke om det finnes noen ordre her da vil jeg stoppe og tilstand blir dør åpen
 		if ordersHere(e) {
 			return elevio.MD_Stop, doorOpen
 		}
+// hvis retning er opp, sjekke om det finnes noen ordre over meg så vil jeg fortsette oppover
+		if orderAbove(e) {
+			return elevio.MD_Up, moving
+		}
+
 // hvis retning er opp, sjekke om det finnes noen ordre under meg da vil jeg snu retning
 		if orderBelow(e) {
 			return elevio.MD_Down, moving
@@ -74,11 +89,12 @@ func chooseDirection(e *Elevator) (elevio.MotorDirection, elevatorState) {
 		return elevio.MD_Stop, idle
 // samme logikk for de andre retningene
 	case elevio.MD_Down:
-		if orderBelow(e) {
-			return elevio.MD_Down, moving
-		}
+		fmt.Print("Elevator moving down \n")
 		if ordersHere(e) {
 			return elevio.MD_Stop, doorOpen
+		}
+		if orderBelow(e) {
+			return elevio.MD_Down, moving
 		}
 		if orderAbove(e) {
 			return elevio.MD_Up, moving
@@ -86,6 +102,7 @@ func chooseDirection(e *Elevator) (elevio.MotorDirection, elevatorState) {
 		return elevio.MD_Stop, idle
 
 	case elevio.MD_Stop:
+		fmt.Print("Elevator not moving\n")
 		if ordersHere(e) {
 			return elevio.MD_Stop, doorOpen
 		}

@@ -2,30 +2,45 @@ package elevator
 
 import (
 	"Driver-go/elevio"
-	Driver "Driver-go/elevio"
 	"fmt"
 )
 
+func addOrderLocal(e *Elevator) bool{
+	return e.mode == singleElavator
+}
+
+
 
 func buttonPressedServiceOrder(e *Elevator, btnFloor int, btnType elevio.ButtonType) {
+	fmt.Print("In func buttonPressedServiceOrder: \n")
+	if !addOrderLocal(e){
+		fmt.Print("Multiple elevators online \n")
+		/// gjør noe
+		return
+	}
+	fmt.Print("Elevator is in single mode \n")
+	fmt.Print("we are now moving on to switch case for singles:) \n")
 	switch e.state {
 
 	case doorOpen:
+		fmt.Print("Door open \n")
 		if shouldClearAtFloorImmediately(e, btnFloor, btnType) {
-			// må vel ha en timer herr??? dør lys etc ..
+			// må vel ha en timer her??? dør lys etc ..
 		} else {
 			addOrder(e, btnFloor, btnType)
 		}
-
+		
 	case moving:
+		fmt.Print("Moving and adding order\n")
 		addOrder(e, btnFloor, btnType)
 
-	// hvis vi er i tiolstand idle må vi gjøre noe vi legger til ordre og bruke choose direction til å bestemme hva vi gjør så
+	// hvis vi er i tilstand idle må vi gjøre noe vi legger til ordre og bruke choose direction til å bestemme hva vi gjør så
 	case idle:
+		fmt.Print("in Idle\n")
 		addOrder(e, btnFloor, btnType)
 
 		dir, Nextstate := chooseDirection(e)
-
+		fmt.Print("Switch case in Idle\n")
 		switch Nextstate {
 			//hvis chooseDirection sier bli her, stopp og åpne dør
 		case doorOpen:
