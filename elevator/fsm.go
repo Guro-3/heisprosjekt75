@@ -5,6 +5,8 @@ import (
 	"fmt"
 )
 
+func initreturntofloor()
+
 func addOrderLocal(e *Elevator) bool{
 	return e.mode == singleElavator
 }
@@ -87,5 +89,13 @@ func serviceOrderAtFloor(e *Elevator, newFloor int) {
 			
 	
 	}
+}
+	
+func onDoorOpen(){
+	// trenger nok et bedre funksjons navn, men skal sette på lys og dør timer, og choose nex direction
+	// sender til kanal start timer
+}
+func onDoortimeout(){
+	// hva gjør vi når tiden er ute
 }
 

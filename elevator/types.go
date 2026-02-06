@@ -34,6 +34,12 @@ const(
 	MasterSlave = 1;
 )
 
-func init(){
-	
+func newelevator(){
+	//elevator struct
+	//config
+	//start state
+	// start motor
+	// returner heis objekt
+
+	// kanskje denne skal kalle en funksjon som får heisen til å startre i en etasje?
 }
