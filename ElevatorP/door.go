@@ -13,7 +13,7 @@ func onDoorOpen(doorStartTimerCh chan int, e *Elevator){
 
 	elevio.SetMotorDirection(elevio.MD_Stop)
 	elevio.SetDoorOpenLamp(true)
-	
+
 	fmt.Print("Door open \n")
 	clearAtCurrentFloor(e, prevDir)
 	doorStartTimerCh <- timeDoorOpenDuration
@@ -35,11 +35,11 @@ func DoorTimeManager(doorTimeoutCh chan int, doorStartTimerCh chan int){
 		select{
 		case timeDuration := <- doorStartTimerCh :
 			timer := time.NewTimer(time.Duration(timeDuration)*time.Second)
-			fmt.Print("Timer has started")
+			fmt.Print("Timer has started\n")
 			select{
 				//legg in obstruction
 			case <- timer.C:
-				fmt.Print("time out")
+				fmt.Print("time out\n")
 				doorTimeoutCh <- timeDuration 
 			}
 		}

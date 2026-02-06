@@ -10,7 +10,7 @@ import (
 // NB!! Hvis en funksjon ikke funker i main betyr det mest sannsynlig at den er privat, for å dele funkjsoner mellom pakker må forbokstaven være stor
 func main() {
 	// 1. initialisere server
-	elevio.Init("127.0.0.1", 4)
+	elevio.Init("127.0.0.1:12345", 4)
 	//2. lage kanaler som go rutinene kan bruke
 	e := ElevatorP.NewElevator()
 	reaciveBtnCh := make(chan elevio.ButtonEvent, 10)
@@ -29,7 +29,7 @@ func main() {
 		ElevatorP.OnInitBetweenFloor(e)
 	}
 
-	fmt.Print("Starter fsm for loop")
+	fmt.Print("Starter fsm for loop\n")
 	for {
 		select {
 		case btn := <-reaciveBtnCh:
