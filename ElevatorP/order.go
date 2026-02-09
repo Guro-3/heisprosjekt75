@@ -77,10 +77,10 @@ func chooseDirection(e *Elevator) (elevio.MotorDirection, elevatorState) {
 
 	case elevio.MD_Up:
 		fmt.Print("Elevator is Moving up \n")
-// hvis retning er opp, sjekke om det finnes noen ordre her da vil jeg stoppe og tilstand blir dør åpen
-		if ordersHere(e) {
-			return elevio.MD_Stop, DoorOpen
-		}
+// // hvis retning er opp, sjekke om det finnes noen ordre her da vil jeg stoppe og tilstand blir dør åpen
+// 		if ordersHere(e) {
+// 			return elevio.MD_Stop, DoorOpen
+// 		} // tenkte at dette burde ikke være i choose direction
 // hvis retning er opp, sjekke om det finnes noen ordre over meg så vil jeg fortsette oppover
 		if orderAbove(e) {
 			return elevio.MD_Up, Moving
@@ -94,9 +94,9 @@ func chooseDirection(e *Elevator) (elevio.MotorDirection, elevatorState) {
 // samme logikk for de andre retningene
 	case elevio.MD_Down:
 		fmt.Print("Elevator Moving down \n")
-		if ordersHere(e) {
-			return elevio.MD_Stop, DoorOpen
-		}
+		// if ordersHere(e) {
+		// 	return elevio.MD_Stop, DoorOpen
+		// }
 		if orderBelow(e) {
 			return elevio.MD_Down, Moving
 		}
@@ -107,9 +107,9 @@ func chooseDirection(e *Elevator) (elevio.MotorDirection, elevatorState) {
 
 	case elevio.MD_Stop:
 		fmt.Print("Elevator not Moving\n")
-		if ordersHere(e) {
-			return elevio.MD_Stop, DoorOpen
-		}
+		// if ordersHere(e) {
+		// 	return elevio.MD_Stop, DoorOpen
+		// }
 		if orderAbove(e) {
 			return elevio.MD_Up, Moving
 		}
@@ -164,7 +164,7 @@ func clearAtCurrentFloor(e *Elevator, prevDir elevio.MotorDirection) {
 		e.HallorderMatrix[e.CurrentFloor][elevio.BT_HallUp] = false
 		TurnOffHallLight(elevio.BT_HallUp, e.CurrentFloor)
 		//og hvis ingen ordre over meg og og ingen hallorder i etasjen jeg er i kan en ekspeder ned ordre
-		if !orderAbove(e) && !hallOrderUpHere(e) {
+		if !orderAbove(e) {
 			e.HallorderMatrix[e.CurrentFloor][elevio.BT_HallDown] = false
 			TurnOffHallLight(elevio.BT_HallDown, e.CurrentFloor)
 		}
@@ -174,7 +174,7 @@ func clearAtCurrentFloor(e *Elevator, prevDir elevio.MotorDirection) {
 		e.HallorderMatrix[e.CurrentFloor][elevio.BT_HallDown] = false
 		TurnOffHallLight(elevio.BT_HallDown, e.CurrentFloor)
 		
-		if !orderBelow(e) && !hallOrderDownHere(e) {
+		if !orderBelow(e)  {
 			e.HallorderMatrix[e.CurrentFloor][elevio.BT_HallUp] = false
 			TurnOffHallLight(elevio.BT_HallUp, e.CurrentFloor)
 		}

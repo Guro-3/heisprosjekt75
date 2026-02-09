@@ -26,9 +26,9 @@ func ButtonPressedServiceOrder(e *Elevator, btnFloor int, btnType elevio.ButtonT
 
 	case DoorOpen:
 		fmt.Print("Door open \n")
-		onDoorOpen(doorStartTimerCh, e)
 		if shouldClearAtFloorImmediately(e, btnFloor, btnType) {
-			TurnOffHallLight(btnType, btnFloor)
+			onDoorOpen(doorStartTimerCh, e)
+			TurnOffHallLight(btnType, btnFloor) // kan ikke lyse være cab her?
 			// må ha dør lys etc ..
 		} else {
 			addOrder(e, btnFloor, btnType)
@@ -42,6 +42,12 @@ func ButtonPressedServiceOrder(e *Elevator, btnFloor int, btnType elevio.ButtonT
 	// hvis vi er i tilstand Idle må vi gjøre noe vi legger til ordre og bruke choose direction til å bestemme hva vi gjør så
 	case Idle:
 		fmt.Print("in Idle\n")
+		if shouldClearAtFloorImmediately(e, btnFloor, btnType) {
+			onDoorOpen(doorStartTimerCh, e)
+			TurnOffHallLight(btnType, btnFloor) 
+			return// burde vi her også sjekke shouldClearImedetly?
+
+
 		addOrder(e, btnFloor, btnType)
 		StartAction(doorStartTimerCh, e)
 	
@@ -53,12 +59,14 @@ func StartAction(doorStartTimerCh chan int, e *Elevator){
 	fmt.Print("Switch case in Idle\n")
 	switch Nextstate {
 			//hvis chooseDirection sier bli her, stopp og åpne dør
-		case DoorOpen:
-			onDoorOpen(doorStartTimerCh, e)
-			// motor skal stå stille når døra er åpen
-			// sett dørlys + start timer 
-			e.State = DoorOpen
-			e.Dir = elevio.MD_Stop
+		// case DoorOpen:
+		// 	onDoorOpen(doorStartTimerCh, e)
+		// 	// motor skal stå stille når døra er åpen
+		// 	// sett dørlys + start timer 
+		// 	e.State = DoorOpen
+		// 	e.Dir = elevio.MD_Stop 
+		
+		// markerte ut denne logikken fordi ettet tenking burde ikke open dår være noe nexstate gir?
 		
 			// hvis chooseDirection sier beveg deg sett retnign og tilstand og start motor i riktig retning
 		case Moving:
