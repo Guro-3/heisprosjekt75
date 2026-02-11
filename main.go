@@ -10,13 +10,13 @@ import (
 // NB!! Hvis en funksjon ikke funker i main betyr det mest sannsynlig at den er privat, for å dele funkjsoner mellom pakker må forbokstaven være stor
 func main() {
 	// 1. initialisere server
-	elevio.Init("127.0.0.1:12345", 4)
+	elevio.Init("127.0.0.1:15657", 4)
 	//2. lage kanaler som go rutinene kan bruke
 	e := ElevatorP.NewElevator()
 	reaciveBtnCh := make(chan elevio.ButtonEvent, 10)
 	reechFloorCh := make(chan int, 10)
-	doorTimeoutCh := make(chan int)
-	doorStartTimerCh := make(chan int)
+	doorTimeoutCh := make(chan int,10)
+	doorStartTimerCh := make(chan int,10)
 
 	go elevio.PollButtons(reaciveBtnCh)
 	go elevio.PollFloorSensor(reechFloorCh)
