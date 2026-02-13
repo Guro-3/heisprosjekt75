@@ -26,6 +26,7 @@ type Elevator struct{
 	Dir elevio.MotorDirection
 	State elevatorState
 	Mode elevatorMode
+	obstructed bool
 }
 
 type elevatorMode int;

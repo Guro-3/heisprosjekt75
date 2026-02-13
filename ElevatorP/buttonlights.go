@@ -22,3 +22,7 @@ func TurnOffHallLight(btn elevio.ButtonType, floor int){
 	fmt.Printf("Lights off in hall on floor %d\n", floor)
 	elevio.SetButtonLamp(btn, floor, false)
 }
+func FloorLight(e *Elevator){
+	floor := e.CurrentFloor
+	elevio.SetFloorIndicator(floor)
+}

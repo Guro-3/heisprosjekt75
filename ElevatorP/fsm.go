@@ -45,11 +45,14 @@ func ButtonPressedServiceOrder(e *Elevator, btnFloor int, btnType elevio.ButtonT
 		}
 
 		addOrder(e, btnFloor, btnType)
-		StartAction(doorStartTimerCh, e)
+		StartAction(e)
 	}
 }
 
-func StartAction(doorStartTimerCh chan int, e *Elevator) {
+func StartAction(e *Elevator) {
+	if e.obstructed {
+		return
+	}
 	Dir, Nextstate := chooseDirection(e)
 	fmt.Print("Switch case in Idle\n")
 
@@ -82,6 +85,7 @@ func StartAction(doorStartTimerCh chan int, e *Elevator) {
 func ServiceOrderAtFloor(e *Elevator, newFloor int, doorStartTimerCh chan int) {
 	// setter heis etajen til etasjen vi når
 	e.CurrentFloor = newFloor
+	FloorLight(e)
 
 	// denne if setning la jeg til for de at hvis ikke og heisen står stille kan heisen åpne og lukke døra konstant
 	if e.State != Moving {
@@ -102,4 +106,3 @@ func OnInitBetweenFloor(e *Elevator) {
 	e.Dir = elevio.MD_Down
 	e.State = Moving
 }
-
