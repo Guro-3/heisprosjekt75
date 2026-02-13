@@ -40,6 +40,11 @@ func NewElevator() *Elevator{
 	e.Dir = elevio.MD_Stop
 	
 	return e
+}
 
-	
+type Heartbeat struct {
+	ID string
+	Role string
+	Port int
+	TimeStamp int
 }
