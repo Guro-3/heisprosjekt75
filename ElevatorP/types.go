@@ -10,7 +10,6 @@ const numHallButtons = 2
 const timeDoorOpenDuration = 3
 
 
-//Må ha stor bokstav i starten av ordet i definisjoner av const, type og struct for at de skal bli public variabler 
 const(
 	Idle elevatorState = 0;
 	Moving = 1;
