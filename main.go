@@ -4,9 +4,10 @@ import (
 	"Driver-go/elevio"
 	"github.com/Guro-3/heisprosjekt75.git/ElevatorP"
 	"Network-go/network"
-	"Network-go/network/bcast"
-	"Network-go/network/localip"
-	"Network-go/network/peers"
+	//"Network-go/network/bcast"
+	//"Network-go/network/localip"
+	// "Network-go/network/peers"
+	"flag"
 	"fmt"
 )
 
@@ -14,7 +15,16 @@ import (
 // NB!! Hvis en funksjon ikke funker i main betyr det mest sannsynlig at den er privat, for å dele funkjsoner mellom pakker må forbokstaven være stor
 func main() {
 	//Initialisering av heiser
-	elevio.Init("127.0.0.1:15657", 4)
+	var elevAddr string
+	var id string
+
+	//flagene var for å kunne kalle ulike elvator servers i terminalen
+	flag.StringVar(&id, "id", "", "node id (A/B/C)")
+	flag.StringVar(&elevAddr, "elev", "127.0.0.1:15657", "elevator server addr")
+	flag.Parse()
+
+
+	elevio.Init(elevAddr, 4)
 
 	e := ElevatorP.NewElevator()
 	reaciveBtnCh := make(chan elevio.ButtonEvent, 10)
@@ -34,12 +44,14 @@ func main() {
 	}
 
 //---------Initialiser nettverk----------------------------------------------------------------------------------------
-	peerUpdateCh := make(chan peers.PeerUpdate)
+
 	// We make channels for sending and receiving our custom data types
-	UDPHeartbeatTx := make(chan ElevatorP.Heartbeat)
-	UDPHeartbeatRx := make(chan ElevatorP.Heartbeat)
-	
-	network.NetworkInit()
+	// UDPHeartbeatTx := make(chan ElevatorP.Heartbeat)
+	// UDPHeartbeatRx := make(chan ElevatorP.Heartbeat)
+
+	// nettwork init finner noden sin egen id brodacaser herr her jeg og leser om det er andre folk på nettet ved bruk av reive og trancive
+	id, peerUpdateCh := network.NetworkInit()
+	fmt.Printf("min id%d\n",id)
 //---------------------------------------------------------------------------------------------------------------------
 	for {
 		select {
@@ -55,9 +67,9 @@ func main() {
 			fmt.Printf("  New:      %q\n", p.New)
 			fmt.Printf("  Lost:     %q\n", p.Lost)
 
-		case a := <-UDPHeartbeatRx:
-			fmt.Printf("Received: %#v\n", a)
-		}
+		// case a := <-UDPHeartbeatRx:
+		// 	fmt.Printf("Received: %#v\n", a)
+		// }
 	}
 	// til senere.....
 
@@ -65,4 +77,5 @@ func main() {
 	// og en assigned order, stateheartbeat kanal?
 	// go routine for recive and send
 
+	}
 }
