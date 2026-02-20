@@ -1,9 +1,9 @@
 package network
 
 import (
+	"fmt"
 	"heisprosjekt75/Network-go/network/localip"
 	"heisprosjekt75/Network-go/network/peers"
-	"fmt"
 	"os"
 )
 
@@ -33,7 +33,7 @@ func NetworkInit() (id string, peerUpdateCh <-chan peers.PeerUpdate) {
 	peerTxEnable <- true
 
 	go peers.Transmitter(10334, id, peerTxEnable)
-	go peers.Receiver(10334, ch)
+	go peers.Receiver(10334, id, ch)
 
 	fmt.Println("[NET] started peers with id:", id)
 

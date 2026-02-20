@@ -1,8 +1,8 @@
 package peers
 
 import (
-	"heisprosjekt75/Network-go/network/conn"
 	"fmt"
+	"heisprosjekt75/Network-go/network/conn"
 	"net"
 	"sort"
 	"time"
@@ -20,7 +20,7 @@ const timeout = 500 * time.Millisecond
 func Transmitter(port int, id string, transmitEnable <-chan bool) {
 
 	conn := conn.DialBroadcastUDP(port)
-	addr, _ := net.ResolveUDPAddr("udp4", fmt.Sprintf("localhost:%d", port))
+	addr, _ := net.ResolveUDPAddr("udp4", fmt.Sprintf("127.0.0.1:%d", port))
 
 	enable := true
 	for {
@@ -34,7 +34,7 @@ func Transmitter(port int, id string, transmitEnable <-chan bool) {
 	}
 }
 
-func Receiver(port int, peerUpdateCh chan<- PeerUpdate) {
+func Receiver(port int, myId string, peerUpdateCh chan<- PeerUpdate) {
 
 	var buf [1024]byte
 	var p PeerUpdate
@@ -50,6 +50,10 @@ func Receiver(port int, peerUpdateCh chan<- PeerUpdate) {
 
 		id := string(buf[:n])
 		// Adding new connection
+		if id == "" || id == myId {
+			continue
+		}
+
 		p.New = ""
 		if id != "" {
 			if _, idExists := lastSeen[id]; !idExists {
@@ -81,6 +85,8 @@ func Receiver(port int, peerUpdateCh chan<- PeerUpdate) {
 			sort.Strings(p.Peers)
 			sort.Strings(p.Lost)
 			peerUpdateCh <- p
+
+		
 		}
 	}
 }
