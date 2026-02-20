@@ -1,8 +1,16 @@
 package ElevatorP
 
-import "Driver-go/elevio"
+import (
+	"Driver-go/elevio"
+	"github.com/Guro-3/heisprosjekt75/RoleManager"
+)
+
 
 type elevatorState int;
+
+
+
+type elevatorMode int;
 
 const NUMFloors = 4
 const numCabButtons = 1
@@ -17,6 +25,13 @@ const(
 	Error_ = 3;
 )
 
+
+
+const(
+	SingleElavator elevatorMode = 0;
+	MasterSlave = 1;
+)
+
 type Elevator struct{
 	CurrentFloor int
 	LastFloor int
@@ -26,16 +41,15 @@ type Elevator struct{
 	State elevatorState
 	Mode elevatorMode
 	obstructed bool
+	MyID string
+	Ps RoleManager.PeerState
 }
 
-type elevatorMode int;
-const(
-	SingleElavator elevatorMode = 0;
-	MasterSlave = 1;
-)
 
-func NewElevator() *Elevator{
+
+func NewElevator(myID string) *Elevator{
 	e := &Elevator{}
+	e.MyID = myID
 	e.State = Idle
 	e.Dir = elevio.MD_Stop
 	

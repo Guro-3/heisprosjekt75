@@ -2,9 +2,9 @@ package main
 
 import (
 	"Driver-go/elevio"
-	"github.com/Guro-3/heisprosjekt75.git/ElevatorP"
+	"github.com/Guro-3/heisprosjekt75/ElevatorP"
 	"Network-go/network"
-	//"Network-go/network/bcast"
+	"github.com/Guro-3/heisprosjekt75/RoleManager"
 	//"Network-go/network/localip"
 	// "Network-go/network/peers"
 	"flag"
@@ -25,8 +25,20 @@ func main() {
 
 
 	elevio.Init(elevAddr, 4)
+	ps:= &RoleManager.PeerState{}
+	//---------Initialiser nettverk----------------------------------------------------------------------------------------
 
-	e := ElevatorP.NewElevator()
+	// We make channels for sending and receiving our custom data types
+	// UDPHeartbeatTx := make(chan ElevatorP.Heartbeat)
+	// UDPHeartbeatRx := make(chan ElevatorP.Heartbeat)
+	// nettwork init finner noden sin egen id brodacaser herr her jeg og leser om det er andre folk på nettet ved bruk av reive og trancive
+	id, peerUpdateCh := network.NetworkInit()
+	fmt.Printf("min id%d\n",id)
+	
+
+//---------------------------------------------------------------------------------------------------------------------
+
+	e := ElevatorP.NewElevator(id)
 	reaciveBtnCh := make(chan elevio.ButtonEvent, 10)
 	reechFloorCh := make(chan int, 10)
 	doorTimeoutCh := make(chan int, 10)
@@ -43,16 +55,7 @@ func main() {
 		ElevatorP.OnInitBetweenFloor(e)
 	}
 
-//---------Initialiser nettverk----------------------------------------------------------------------------------------
 
-	// We make channels for sending and receiving our custom data types
-	// UDPHeartbeatTx := make(chan ElevatorP.Heartbeat)
-	// UDPHeartbeatRx := make(chan ElevatorP.Heartbeat)
-
-	// nettwork init finner noden sin egen id brodacaser herr her jeg og leser om det er andre folk på nettet ved bruk av reive og trancive
-	id, peerUpdateCh := network.NetworkInit()
-	fmt.Printf("min id%d\n",id)
-//---------------------------------------------------------------------------------------------------------------------
 	for {
 		select {
 		case btn := <-reaciveBtnCh:
@@ -66,6 +69,7 @@ func main() {
 			fmt.Printf("  Peers:    %q\n", p.Peers)
 			fmt.Printf("  New:      %q\n", p.New)
 			fmt.Printf("  Lost:     %q\n", p.Lost)
+			RoleManager.RoleElection(p,e.MyID,ps)
 
 		// case a := <-UDPHeartbeatRx:
 		// 	fmt.Printf("Received: %#v\n", a)
