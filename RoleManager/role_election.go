@@ -1,7 +1,7 @@
 package RoleManager
 
 import(
-	"Network-go/network/peers"
+	"heisprosjekt75/Network-go/network/peers"
 	"fmt"
 )
 

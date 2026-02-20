@@ -1,8 +1,8 @@
 package ElevatorP
 
 import (
-	"Driver-go/elevio"
-	"github.com/Guro-3/heisprosjekt75/RoleManager"
+	"heisprosjekt75/Driver-go/elevio"
+	"heisprosjekt75/RoleManager"
 )
 
 

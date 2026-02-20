@@ -1,14 +1,13 @@
 package peers
 
 import (
-	"Network-go/network/conn"
+	"heisprosjekt75/Network-go/network/conn"
 	"fmt"
 	"net"
 	"sort"
 	"time"
 )
 
-//denne UDP modulen kan vi bruke for å sette opp TCP-nettet
 type PeerUpdate struct {
 	Peers []string
 	New   string
@@ -21,7 +20,7 @@ const timeout = 500 * time.Millisecond
 func Transmitter(port int, id string, transmitEnable <-chan bool) {
 
 	conn := conn.DialBroadcastUDP(port)
-	addr, _ := net.ResolveUDPAddr("udp4", fmt.Sprintf("255.255.255.255:%d", port))
+	addr, _ := net.ResolveUDPAddr("udp4", fmt.Sprintf("localhost:%d", port))
 
 	enable := true
 	for {
@@ -50,7 +49,6 @@ func Receiver(port int, peerUpdateCh chan<- PeerUpdate) {
 		n, _, _ := conn.ReadFrom(buf[0:])
 
 		id := string(buf[:n])
-
 		// Adding new connection
 		p.New = ""
 		if id != "" {

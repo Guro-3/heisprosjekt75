@@ -1,10 +1,10 @@
 package main
 
 import (
-	"Driver-go/elevio"
-	"github.com/Guro-3/heisprosjekt75/ElevatorP"
-	"Network-go/network"
-	"github.com/Guro-3/heisprosjekt75/RoleManager"
+	"heisprosjekt75/Driver-go/elevio"
+	"heisprosjekt75/ElevatorP"
+	"heisprosjekt75/Network-go/network"
+	"heisprosjekt75/RoleManager"
 	//"Network-go/network/localip"
 	// "Network-go/network/peers"
 	"flag"

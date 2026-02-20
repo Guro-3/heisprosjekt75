@@ -1,7 +1,7 @@
 package ElevatorP
 
 import (
-	"Driver-go/elevio"
+	"heisprosjekt75/Driver-go/elevio"
 )
 
 func SeCabLight(floor int){
