@@ -12,7 +12,7 @@ type elevatorState int;
 
 type elevatorMode int;
 
-const NUMFloors = 4
+const numFloors = 4
 const numCabButtons = 1
 const numHallButtons = 2
 const timeDoorOpenDuration = 3
@@ -29,14 +29,14 @@ const(
 
 const(
 	SingleElavator elevatorMode = 0;
-	MasterSlave = 1;
+	PrimaryBackup = 1;
 )
 
 type Elevator struct{
 	CurrentFloor int
 	LastFloor int
-	CabOrderMatrix  [NUMFloors][numCabButtons]bool
-	HallorderMatrix  [NUMFloors][numHallButtons]bool
+	CabOrderMatrix  [numFloors][numCabButtons]bool
+	HallorderMatrix  [numFloors][numHallButtons]bool
 	Dir elevio.MotorDirection
 	State elevatorState
 	Mode elevatorMode
@@ -57,9 +57,3 @@ func NewElevator(myID string, MyIP string) *Elevator{
 	return e
 }
 
-type Heartbeat struct {
-	ID string
-	Role string
-	Port int
-	TimeStamp int
-}

@@ -49,7 +49,7 @@ func orderBelow(e *Elevator) bool {
 
 
 func orderAbove(e *Elevator) bool {
-	for f := e.CurrentFloor+ 1; f < NUMFloors; f++ {
+	for f := e.CurrentFloor+ 1; f < numFloors; f++ {
 		for b := 0; b < numHallButtons; b++ {
 			if e.HallorderMatrix[f][b] {
 				return true

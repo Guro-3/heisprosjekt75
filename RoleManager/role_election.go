@@ -9,21 +9,21 @@ func RoleElection(peers peers.PeerUpdate, MyID string, ps *PeerState) {
 	ps.PrevRole = ps.Role
 
 	if len(peers.Peers) == 0 {
-		ps.MasterID = MyID
+		ps.PrimaryID = MyID
 	} else {
-		ps.MasterID = peers.Peers[0]
+		ps.PrimaryID = peers.Peers[0]
 	}
 
 	if len(peers.Peers) >= 2 {
 		ps.BackupID = peers.Peers[1]
 	}
-	fmt.Printf("DEBUG: MyID=%q MasterID=%q BackupID=%q\n",
-		MyID, ps.MasterID, ps.BackupID)
+	fmt.Printf("DEBUG: MyID=%q PrimaryID=%q BackupID=%q\n",
+		MyID, ps.PrimaryID, ps.BackupID)
 
 	switch MyID {
-	case ps.MasterID:
-		ps.Role = RoleMaster
-		fmt.Print("my role is Master\n")
+	case ps.PrimaryID:
+		ps.Role = RolePrimary
+		fmt.Print("my role is Primary\n")
 	case ps.BackupID:
 		ps.Role = RoleBackup
 		fmt.Print("my role is backup\n")
@@ -32,3 +32,4 @@ func RoleElection(peers peers.PeerUpdate, MyID string, ps *PeerState) {
 		fmt.Print("my role is none\n")
 	}
 }
+

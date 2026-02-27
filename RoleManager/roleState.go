@@ -1,9 +1,13 @@
 package RoleManager
 
+import(
+	"net"
+)
+
 
 type elevatorRole int
 const(
-	RoleMaster elevatorRole = 0;
+	RolePrimary elevatorRole = 0;
 	RoleBackup = 1;
 	RoleNode = 2;
 )
@@ -12,6 +16,9 @@ const(
 type PeerState struct{
 	Role elevatorRole
 	PrevRole elevatorRole
-	MasterID string
+	PrimaryID string
+	PrimaryConn net.Conn
+	PrimaryIP string
 	BackupID string
+	
 }

@@ -6,11 +6,10 @@ import (
 	"heisprosjekt75/Network-go/network"
 	"heisprosjekt75/Network-go/network/bcast"
 	"heisprosjekt75/Network-go/network/localip"
-	"heisprosjekt75/Network-go/network/masterHeartbeat"
+	PrimaryHeartbeat "heisprosjekt75/Network-go/network/primaryHeartbeat"
+	rolechanges "heisprosjekt75/RoleChanges"
 	"heisprosjekt75/RoleManager"
 
-	//"Network-go/network/localip"
-	// "Network-go/network/peers"
 	"flag"
 	"fmt"
 	"time"
@@ -23,7 +22,8 @@ func main() {
 	var id string
 	const (
 		d            = 500 * time.Millisecond
-		brodcastPort = 83452
+		brodcastPort = 43452
+		TCPPort      = "3000"
 	)
 
 	//flagene var for å kunne kalle ulike elvator servers i terminalen
@@ -36,8 +36,7 @@ func main() {
 	//---------Initialiser nettverk----------------------------------------------------------------------------------------
 
 	// We make channels for sending and receiving our custom data types
-	UDPHeartbeatTx := make(chan masterHeartbeat.MstrHeartbeat)
-	UDPHeartbeatRx := make(chan masterHeartbeat.MstrHeartbeat)
+
 	// nettwork init finner noden sin egen id brodacaser herr her jeg og leser om det er andre folk på nettet ved bruk av reive og trancive
 	id, peerUpdateCh := network.NetworkInit()
 	fmt.Println("min id", id)
@@ -46,6 +45,11 @@ func main() {
 	ip, _ := localip.LocalIP()
 
 	e := ElevatorP.NewElevator(id, ip)
+
+	UDPHeartbeatTx := make(chan PrimaryHeartbeat.PrimHeartbeat, 10)
+	UDPHeartbeatRx := make(chan PrimaryHeartbeat.PrimHeartbeat, 10)
+	TCPRx := make(chan string, 10)
+
 	reaciveBtnCh := make(chan elevio.ButtonEvent, 10)
 	reechFloorCh := make(chan int, 10)
 	doorTimeoutCh := make(chan int, 10)
@@ -54,7 +58,7 @@ func main() {
 
 	go bcast.Transmitter(brodcastPort, UDPHeartbeatTx)
 	go bcast.Receiver(brodcastPort, UDPHeartbeatRx)
-	go masterHeartbeat.SendMasterIpId(UDPHeartbeatTx, d, ps, e)
+	go PrimaryHeartbeat.SendPrimaryIpId(UDPHeartbeatTx, d, ps, e)
 
 	go elevio.PollButtons(reaciveBtnCh)
 	go elevio.PollFloorSensor(reechFloorCh)
@@ -80,9 +84,16 @@ func main() {
 			fmt.Printf("  New:      %q\n", p.New)
 			fmt.Printf("  Lost:     %q\n", p.Lost)
 			RoleManager.RoleElection(p, e.MyID, ps)
-		case masterIdIp := <-UDPHeartbeatRx:
-			fmt.Printf("  MasterID:    %q\n", masterIdIp.MasterID)
-			fmt.Printf("  MasterIP:    %q\n", masterIdIp.MasterAddrTCP)
+			if ps.PrevRole != ps.Role {
+				rolechanges.RolesSwitched(ps, TCPPort, TCPRx, e)
+			}
+		case PrimaryIdIp := <-UDPHeartbeatRx:
+			//fmt.Printf("  PrimaryID:    %q\n", PrimaryIdIp.PrimaryID)
+			//fmt.Printf("  PrimaryIP:    %q\n", PrimaryIdIp.PrimaryAddrTCP)
+			ps.PrimaryID = PrimaryIdIp.PrimaryID
+			ps.PrimaryIP = PrimaryIdIp.PrimaryAddrTCP
+		case message := <-TCPRx:
+			fmt.Printf("Message on TCP chan: %s\n", message)
 			// case a := <-UDPHeartbeatRx:
 			// 	fmt.Printf("Received: %#v\n", a)
 			// }
