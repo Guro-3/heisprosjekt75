@@ -1,26 +1,26 @@
 package RoleManager
 
-import(
-	"heisprosjekt75/Network-go/network/peers"
+import (
 	"fmt"
+	"heisprosjekt75/Network-go/network/peers"
 )
 
-func RoleElection(peers peers.PeerUpdate, MyID string,ps *PeerState){
+func RoleElection(peers peers.PeerUpdate, MyID string, ps *PeerState) {
 	ps.PrevRole = ps.Role
 
-	ps.MasterID = ""
-    ps.BackupID = ""
-
-	if len(peers.Peers) >=1 {
+	if len(peers.Peers) == 0 {
+		ps.MasterID = MyID
+	} else {
 		ps.MasterID = peers.Peers[0]
 	}
+
 	if len(peers.Peers) >= 2 {
-		ps. BackupID = peers.Peers[1]
+		ps.BackupID = peers.Peers[1]
 	}
 	fmt.Printf("DEBUG: MyID=%q MasterID=%q BackupID=%q\n",
-    MyID, ps.MasterID, ps.BackupID)
-	
-	switch MyID{
+		MyID, ps.MasterID, ps.BackupID)
+
+	switch MyID {
 	case ps.MasterID:
 		ps.Role = RoleMaster
 		fmt.Print("my role is Master\n")
@@ -32,4 +32,3 @@ func RoleElection(peers peers.PeerUpdate, MyID string,ps *PeerState){
 		fmt.Print("my role is none\n")
 	}
 }
-	

@@ -43,16 +43,17 @@ type Elevator struct{
 	obstructed bool
 	MyID string
 	Ps RoleManager.PeerState
+	ElevIP string
 }
 
 
 
-func NewElevator(myID string) *Elevator{
+func NewElevator(myID string, MyIP string) *Elevator{
 	e := &Elevator{}
 	e.MyID = myID
 	e.State = Idle
 	e.Dir = elevio.MD_Stop
-	
+	e.ElevIP = MyIP
 	return e
 }
 

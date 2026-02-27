@@ -4,13 +4,16 @@ import (
 	"heisprosjekt75/Driver-go/elevio"
 	"heisprosjekt75/ElevatorP"
 	"heisprosjekt75/Network-go/network"
-
-	//"heisprosjekt75/RoleManager"
+	"heisprosjekt75/Network-go/network/bcast"
+	"heisprosjekt75/Network-go/network/localip"
+	"heisprosjekt75/Network-go/network/masterHeartbeat"
+	"heisprosjekt75/RoleManager"
 
 	//"Network-go/network/localip"
 	// "Network-go/network/peers"
 	"flag"
 	"fmt"
+	"time"
 )
 
 // NB!! Hvis en funksjon ikke funker i main betyr det mest sannsynlig at den er privat, for å dele funkjsoner mellom pakker må forbokstaven være stor
@@ -18,6 +21,10 @@ func main() {
 	//Initialisering av heiser
 	var elevAddr string
 	var id string
+	const (
+		d            = 500 * time.Millisecond
+		brodcastPort = 83452
+	)
 
 	//flagene var for å kunne kalle ulike elvator servers i terminalen
 	flag.StringVar(&id, "id", "", "node id (A/B/C)")
@@ -25,24 +32,29 @@ func main() {
 	flag.Parse()
 
 	elevio.Init(elevAddr, 4)
-	//ps := &RoleManager.PeerState{}
+	ps := &RoleManager.PeerState{}
 	//---------Initialiser nettverk----------------------------------------------------------------------------------------
 
 	// We make channels for sending and receiving our custom data types
-	// UDPHeartbeatTx := make(chan ElevatorP.Heartbeat)
-	// UDPHeartbeatRx := make(chan ElevatorP.Heartbeat)
+	UDPHeartbeatTx := make(chan masterHeartbeat.MstrHeartbeat)
+	UDPHeartbeatRx := make(chan masterHeartbeat.MstrHeartbeat)
 	// nettwork init finner noden sin egen id brodacaser herr her jeg og leser om det er andre folk på nettet ved bruk av reive og trancive
 	id, peerUpdateCh := network.NetworkInit()
-	fmt.Printf("min id%d\n", id)
+	fmt.Println("min id", id)
 
 	//---------------------------------------------------------------------------------------------------------------------
+	ip, _ := localip.LocalIP()
 
-	e := ElevatorP.NewElevator(id)
+	e := ElevatorP.NewElevator(id, ip)
 	reaciveBtnCh := make(chan elevio.ButtonEvent, 10)
 	reechFloorCh := make(chan int, 10)
 	doorTimeoutCh := make(chan int, 10)
 	doorStartTimerCh := make(chan int, 10)
 	obstructionBtnCh := make(chan bool)
+
+	go bcast.Transmitter(brodcastPort, UDPHeartbeatTx)
+	go bcast.Receiver(brodcastPort, UDPHeartbeatRx)
+	go masterHeartbeat.SendMasterIpId(UDPHeartbeatTx, d, ps, e)
 
 	go elevio.PollButtons(reaciveBtnCh)
 	go elevio.PollFloorSensor(reechFloorCh)
@@ -67,8 +79,10 @@ func main() {
 			fmt.Printf("  Peers:    %q\n", p.Peers)
 			fmt.Printf("  New:      %q\n", p.New)
 			fmt.Printf("  Lost:     %q\n", p.Lost)
-			//RoleManager.RoleElection(p, e.MyID, ps)
-
+			RoleManager.RoleElection(p, e.MyID, ps)
+		case masterIdIp := <-UDPHeartbeatRx:
+			fmt.Printf("  MasterID:    %q\n", masterIdIp.MasterID)
+			fmt.Printf("  MasterIP:    %q\n", masterIdIp.MasterAddrTCP)
 			// case a := <-UDPHeartbeatRx:
 			// 	fmt.Printf("Received: %#v\n", a)
 			// }
