@@ -7,11 +7,12 @@ import (
 	"heisprosjekt75/Network-go/network/bcast"
 	"heisprosjekt75/Network-go/network/localip"
 	PrimaryHeartbeat "heisprosjekt75/Network-go/network/primaryHeartbeat"
-	rolechanges "heisprosjekt75/RoleChanges"
-	"heisprosjekt75/RoleManager"
 
 	"flag"
 	"fmt"
+	"heisprosjekt75/Network-go/network/tcp"
+	rolechanges "heisprosjekt75/RoleChanges"
+	"heisprosjekt75/RoleManager"
 	"time"
 )
 
@@ -86,12 +87,19 @@ func main() {
 			RoleManager.RoleElection(p, e.MyID, ps)
 			if ps.PrevRole != ps.Role {
 				rolechanges.RolesSwitched(ps, TCPPort, TCPRx, e)
+				ps.PrevRole = ps.Role
 			}
+			// TEST: hvis jeg er primary og har backupID
+			
 		case PrimaryIdIp := <-UDPHeartbeatRx:
 			//fmt.Printf("  PrimaryID:    %q\n", PrimaryIdIp.PrimaryID)
 			//fmt.Printf("  PrimaryIP:    %q\n", PrimaryIdIp.PrimaryAddrTCP)
 			ps.PrimaryID = PrimaryIdIp.PrimaryID
 			ps.PrimaryIP = PrimaryIdIp.PrimaryAddrTCP
+			if ps.Role == RoleManager.RolePrimary && ps.BackupID != "" {
+				fmt.Println("Primary sending test message to backup:", ps.BackupID)
+				tcp.SendTCP(ps.BackupID, "HELLO_BACKUP", ps)
+			}
 		case message := <-TCPRx:
 			fmt.Printf("Message on TCP chan: %s\n", message)
 			// case a := <-UDPHeartbeatRx:
