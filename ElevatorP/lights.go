@@ -2,6 +2,7 @@ package ElevatorP
 
 import (
 	"heisprosjekt75/Driver-go/elevio"
+	"heisprosjekt75/types"
 )
 
 func SeCabLight(floor int){
@@ -17,7 +18,7 @@ func SetHallLight(btn elevio.ButtonType, floor int){
 func TurnOffHallLight(btn elevio.ButtonType, floor int){
 	elevio.SetButtonLamp(btn, floor, false)
 }
-func FloorLight(e *Elevator){
+func FloorLight(e *types.Elevator){
 	floor := e.CurrentFloor
 	elevio.SetFloorIndicator(floor)
 }

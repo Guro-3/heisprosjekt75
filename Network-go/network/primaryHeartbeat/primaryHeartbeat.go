@@ -2,8 +2,7 @@ package PrimaryHeartbeat
 
 import (
 	//"fmt"
-	"heisprosjekt75/ElevatorP"
-	"heisprosjekt75/RoleManager"
+	"heisprosjekt75/types"
 	"time"
 )
 
@@ -12,12 +11,12 @@ type PrimHeartbeat struct {
 	PrimaryAddrTCP string
 }
 
-func SendPrimaryIpId(UDPHeartBeatTx chan PrimHeartbeat, d time.Duration, ps *RoleManager.PeerState, e *ElevatorP.Elevator) {
+func SendPrimaryIpId(UDPHeartBeatTx chan PrimHeartbeat, d time.Duration, ps *types.PeerState, e *types.Elevator) {
 	tic := time.NewTicker(d)
 	defer tic.Stop()
 
 	for range tic.C {
-		if ps.Role == RoleManager.RolePrimary {
+		if ps.Role == types.RolePrimary {
 			UDPHeartBeatTx <- PrimHeartbeat{e.MyID, e.ElevIP}
 		}
 	}

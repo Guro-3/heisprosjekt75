@@ -1,18 +1,21 @@
 package main
 
 import (
+	"flag"
+	"fmt"
 	"heisprosjekt75/Driver-go/elevio"
 	"heisprosjekt75/ElevatorP"
 	"heisprosjekt75/Network-go/network"
 	"heisprosjekt75/Network-go/network/bcast"
 	"heisprosjekt75/Network-go/network/localip"
 	PrimaryHeartbeat "heisprosjekt75/Network-go/network/primaryHeartbeat"
-
-	"flag"
-	"fmt"
 	"heisprosjekt75/Network-go/network/tcp"
-	rolechanges "heisprosjekt75/RoleChanges"
-	"heisprosjekt75/RoleManager"
+	messagelogic "heisprosjekt75/RoleLogic/MessageLogic"
+	rolechanges "heisprosjekt75/RoleLogic/RoleChanges"
+	"heisprosjekt75/RoleLogic/RoleManager"
+
+	//schedueler "heisprosjekt75/Schedueler"
+	"heisprosjekt75/types"
 	"time"
 )
 
@@ -33,7 +36,7 @@ func main() {
 	flag.Parse()
 
 	elevio.Init(elevAddr, 4)
-	ps := &RoleManager.PeerState{}
+	ps := &types.PeerState{}
 	//---------Initialiser nettverk----------------------------------------------------------------------------------------
 
 	// We make channels for sending and receiving our custom data types
@@ -49,7 +52,8 @@ func main() {
 
 	UDPHeartbeatTx := make(chan PrimaryHeartbeat.PrimHeartbeat, 10)
 	UDPHeartbeatRx := make(chan PrimaryHeartbeat.PrimHeartbeat, 10)
-	TCPRx := make(chan string, 10)
+	TCPRx := make(chan tcp.Message, 10)
+	TCPHeartbeatCh := make(chan tcp.Message, 10)
 
 	reaciveBtnCh := make(chan elevio.ButtonEvent, 10)
 	reechFloorCh := make(chan int, 10)
@@ -67,6 +71,8 @@ func main() {
 	go elevio.PollObstructionSwitch(obstructionBtnCh)
 	go ElevatorP.OnObstruction(obstructionBtnCh, e, doorStartTimerCh)
 
+	tcp.StartHeartbeatSender(ps, TCPHeartbeatCh)
+
 	if elevio.GetFloor() == -1 {
 		ElevatorP.OnInitBetweenFloor(e)
 	}
@@ -74,7 +80,11 @@ func main() {
 	for {
 		select {
 		case btn := <-reaciveBtnCh:
-			ElevatorP.ButtonPressedServiceOrder(e, btn.Floor, btn.Button, doorStartTimerCh)
+			if e.Mode == types.SingleElevator || btn.Button == elevio.BT_Cab {
+				ElevatorP.ButtonPressedServiceOrder(e, btn.Floor, btn.Button, doorStartTimerCh)
+			} else {
+				messagelogic.ButtonTransmitLogic(ps, e, btn)
+			}
 		case newFloor := <-reechFloorCh:
 			ElevatorP.ServiceOrderAtFloor(e, newFloor, doorStartTimerCh)
 		case <-doorTimeoutCh:
@@ -84,27 +94,29 @@ func main() {
 			fmt.Printf("  Peers:    %q\n", p.Peers)
 			fmt.Printf("  New:      %q\n", p.New)
 			fmt.Printf("  Lost:     %q\n", p.Lost)
-			RoleManager.RoleElection(p, e.MyID, ps)
+			RoleManager.RoleElection(p, e, ps)
 			if ps.PrevRole != ps.Role {
 				rolechanges.RolesSwitched(ps, TCPPort, TCPRx, e)
 				ps.PrevRole = ps.Role
+
+				if ps.Role == types.RoleBackup {
+					go tcp.HeartbeatTick(e, ps, 5*time.Second, TCPHeartbeatCh)
+				}
 			}
 			// TEST: hvis jeg er primary og har backupID
-			
+
 		case PrimaryIdIp := <-UDPHeartbeatRx:
 			//fmt.Printf("  PrimaryID:    %q\n", PrimaryIdIp.PrimaryID)
 			//fmt.Printf("  PrimaryIP:    %q\n", PrimaryIdIp.PrimaryAddrTCP)
 			ps.PrimaryID = PrimaryIdIp.PrimaryID
 			ps.PrimaryIP = PrimaryIdIp.PrimaryAddrTCP
-			if ps.Role == RoleManager.RolePrimary && ps.BackupID != "" {
-				fmt.Println("Primary sending test message to backup:", ps.BackupID)
-				tcp.SendTCP(ps.BackupID, "HELLO_BACKUP", ps)
-			}
+			//btn := elevio.ButtonEvent{Floor: 2, Button: elevio.BT_HallDown}
+			//schedueler.DelegateOrders(ps.BackupID, ps, e, btn)
+
 		case message := <-TCPRx:
-			fmt.Printf("Message on TCP chan: %s\n", message)
-			// case a := <-UDPHeartbeatRx:
-			// 	fmt.Printf("Received: %#v\n", a)
-			// }
+			fmt.Printf("Message on TCP chan")
+			messagelogic.OnMessageReceive(message, ps, e)
+
 		}
 		// til senere.....
 

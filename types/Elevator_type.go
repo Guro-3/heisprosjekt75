@@ -1,0 +1,38 @@
+
+package types
+
+import "heisprosjekt75/Driver-go/elevio"
+
+const NumFloors = 4
+const NumCabButtons = 1
+const NumHallButtons = 2
+const TimeDoorOpenDuration = 3
+
+type ElevatorState int
+type ElevatorMode int
+
+const (
+	Idle ElevatorState = iota
+	Moving
+	DoorOpen
+	Error
+)
+
+const (
+	SingleElevator ElevatorMode = iota
+	PrimaryBackup
+)
+
+type Elevator struct {
+	CurrentFloor    int
+	LastFloor       int
+	CabOrderMatrix  [NumFloors][NumCabButtons]bool
+	HallOrderMatrix [NumFloors][NumHallButtons]bool
+	Dir             elevio.MotorDirection
+	State           ElevatorState
+	Mode            ElevatorMode
+	Obstructed      bool
+	MyID            string
+	ElevIP          string
+	Ps              PeerState
+}

@@ -1,9 +1,9 @@
 package tcp
 
 import (
-	"encoding/json"
+	
 	"heisprosjekt75/Driver-go/elevio"
-	"heisprosjekt75/RoleManager"
+	"heisprosjekt75/types"
 	"net"
 )
 
@@ -11,7 +11,7 @@ import (
 type MsgType int
 
 const (
-	MsgHeartbeat MsgType = 0
+	MsgHeartbeat MsgType = iota
 	MsgSnapshot
 	MsgHallOrder
 	MsgCompletedOrder
@@ -21,15 +21,16 @@ const (
 type Message struct {
 	Type   MsgType         `json:"type"`
 	NodeID string          `json:"nodeId"`
-	Data   json.RawMessage `json:"data"`
+	MessageData interface{}     //`json:"data"`
 }
 
-// PAYLOADS:
+
 
 type HeartbeatMessage struct {
-	Role       RoleManager.ElevatorRole `json:"role"` 
-	Floor      int                     `json:"floor"`
-	CurrentDir elevio.MotorDirection   `json:"currentDir"`
+	CurrentFloor int `json:"currentFloor"` 
+	State types.ElevatorState `json:"state"` 
+	Dir elevio.MotorDirection `json:"direction"` 
+	CabRequests [][]bool `json:"cabRequests"` 
 }
 
 type SnapshotHallOrdersMessage struct {
@@ -40,12 +41,12 @@ type SnapshotHallOrdersMessage struct {
 
 type HallOrderMessage struct {
 	Floor  int `json:"floor"`
-	Button int `json:"button"` 
+	Button elevio.ButtonType `json:"button"` 
 }
 
 type CompletedOrderMessage struct {
 	Floor  int `json:"floor"`
-	Button int `json:"button"`
+	Button elevio.ButtonType `json:"button"`
 }
 
 var nodeConnMap = make(map[string]net.Conn)

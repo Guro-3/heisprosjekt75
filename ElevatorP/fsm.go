@@ -2,38 +2,33 @@ package ElevatorP
 
 import (
 	"heisprosjekt75/Driver-go/elevio"
+	"heisprosjekt75/types"
 	"fmt"
 )
 
-func addOrderLocal(e *Elevator) bool {
-	return e.Mode == SingleElavator
-}
 
-func ButtonPressedServiceOrder(e *Elevator, btnFloor int, btnType elevio.ButtonType, doorStartTimerCh chan int) {
+
+func ButtonPressedServiceOrder(e *types.Elevator, btnFloor int, btnType elevio.ButtonType, doorStartTimerCh chan int) {
 	fmt.Print("In func buttonPressedServiceOrder: \n")
-	if !addOrderLocal(e) {
-		fmt.Print("Multiple elevators online \n")
-		/// gjør noe
-		return
-	}
+	
 	fmt.Print("Elevator is in single Mode \n")
 
 	switch e.State {
 
-	case DoorOpen:
+	case types.DoorOpen:
 		if shouldClearAtFloorImmediately(e, btnFloor, btnType) {
 			onDoorOpen(doorStartTimerCh, e)
 			TurnOffHallLight(btnType, btnFloor)
 
 		} else {
-			addOrder(e, btnFloor, btnType)
+			AddOrder(e, btnFloor, btnType)
 		}
 
-	case Moving:
+	case types.Moving:
 
-		addOrder(e, btnFloor, btnType)
+		AddOrder(e, btnFloor, btnType)
 
-	case Idle:
+	case types.Idle:
 
 		if shouldClearAtFloorImmediately(e, btnFloor, btnType) {
 			onDoorOpen(doorStartTimerCh, e)
@@ -41,36 +36,36 @@ func ButtonPressedServiceOrder(e *Elevator, btnFloor int, btnType elevio.ButtonT
 			return
 		}
 
-		addOrder(e, btnFloor, btnType)
+		AddOrder(e, btnFloor, btnType)
 		StartAction(e)
 	}
 }
 
-func StartAction(e *Elevator) {
-	if e.obstructed {
+func StartAction(e *types.Elevator) {
+	if e.Obstructed {
 		return
 	}
 	Dir, Nextstate := chooseDirection(e)
 
 	switch Nextstate {
-	case Moving:
-		e.State = Moving
+	case types.Moving:
+		e.State = types.Moving
 		e.Dir = Dir
 		elevio.SetMotorDirection(Dir)
 
-	case Idle:
-		e.State = Idle
+	case types.Idle:
+		e.State = types.Idle
 		e.Dir = elevio.MD_Stop
 		elevio.SetMotorDirection(elevio.MD_Stop)
 	}
 }
 
 
-func ServiceOrderAtFloor(e *Elevator, newFloor int, doorStartTimerCh chan int) {
+func ServiceOrderAtFloor(e *types.Elevator, newFloor int, doorStartTimerCh chan int) {
 	e.CurrentFloor = newFloor
 	FloorLight(e)
 
-	if e.State != Moving {
+	if e.State != types.Moving {
 		return
 	}
 	if shouldStop(e) {
@@ -78,8 +73,8 @@ func ServiceOrderAtFloor(e *Elevator, newFloor int, doorStartTimerCh chan int) {
 	}
 }
 
-func OnInitBetweenFloor(e *Elevator) {
+func OnInitBetweenFloor(e *types.Elevator) {
 	elevio.SetMotorDirection(elevio.MD_Down)
 	e.Dir = elevio.MD_Down
-	e.State = Moving
+	e.State = types.Moving
 }

@@ -3,45 +3,46 @@ package ElevatorP
 import (
 	"heisprosjekt75/Driver-go/elevio"
 	"time"
+	"heisprosjekt75/types"
 )
 
-func onDoorOpen(doorStartTimerCh chan int, e *Elevator) {
+func onDoorOpen(doorStartTimerCh chan int, e *types.Elevator) {
 	prevDir := e.Dir
-	e.State = DoorOpen
+	e.State = types.DoorOpen
 
 	elevio.SetMotorDirection(elevio.MD_Stop)
 	elevio.SetDoorOpenLamp(true)
 
 	clearAtCurrentFloor(e, prevDir)
-	doorStartTimerCh <- timeDoorOpenDuration
+	doorStartTimerCh <- types.TimeDoorOpenDuration
 }
 
-func OnDoortimeout(doorStartTimerCh chan int, e *Elevator) {
-	if e.obstructed {
+func OnDoortimeout(doorStartTimerCh chan int, e *types.Elevator) {
+	if e.Obstructed {
 		return
 	}
 	elevio.SetDoorOpenLamp(false)
 	StartAction(e)
 }
 
-func OnObstruction(obstructionBtnCh chan bool, e *Elevator, doorStartTimerCh chan int) {
+func OnObstruction(obstructionBtnCh chan bool, e *types.Elevator, doorStartTimerCh chan int) {
 	for {
 		obstruction := <-obstructionBtnCh
 
 		if obstruction {
-			e.obstructed = true
-			if e.State == DoorOpen || e.State == Idle {
+			e.Obstructed = true
+			if e.State == types.DoorOpen || e.State == types.Idle {
 				elevio.SetMotorDirection(elevio.MD_Stop)
 				elevio.SetDoorOpenLamp(true)
 			}
 		} else {			
-			e.obstructed = false
-			doorStartTimerCh <- timeDoorOpenDuration
+			e.Obstructed = false
+			doorStartTimerCh <- types.TimeDoorOpenDuration
 		}
 	}
 }
 
-func DoorTimeManager(e *Elevator, doorTimeoutCh chan int, doorStartTimerCh chan int) {
+func DoorTimeManager(e *types.Elevator, doorTimeoutCh chan int, doorStartTimerCh chan int) {
 	for {
 		select {
 		case timeDuration := <-doorStartTimerCh:
