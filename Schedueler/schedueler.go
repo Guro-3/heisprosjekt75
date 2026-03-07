@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"heisprosjekt75/Driver-go/elevio"
 	"heisprosjekt75/Network-go/network/tcp"
+	"heisprosjekt75/ElevatorP"
 	"heisprosjekt75/types"
 	"os/exec"
 )
 
 func assignHallRequests(input []byte) (map[string][][]bool, error) {
 
-	cmd := exec.Command("./cost_fns/hall_request_assigner", "--input", string(input))
+	cmd := exec.Command("./cost_fns/hall_request_assigner/hall_request_assigner", "--input", string(input))
 
 	output, err := cmd.Output()
 	if err != nil {
@@ -34,9 +35,17 @@ func DelegateOrders(receiverID string, ps *types.PeerState, e *types.Elevator, b
 	tcp.SendTCP(receiverID, buttonMessage, ps)
 }
 
-func MasterSchedueler(e *types.Elevator, ps *types.PeerState) {
-	hallRequests := types.MatrixToSlice(types.NumFloors, types.NumHallButtons, func(f, b int) bool { return types.FullOrderMatrix[f][b] })
-	fmt.Printf("Enetring schedular\n")
+func MasterSchedueler(e *types.Elevator, ps *types.PeerState,doorStartTimerCh chan int) {
+	types.UpdateMyState(e)
+
+	hallRequests := make([][2]bool, types.NumFloors)
+	for f := 0; f < types.NumFloors; f++ {
+		hallRequests[f] = [2]bool{
+			types.FullOrderMatrix[f][0],
+			types.FullOrderMatrix[f][1],
+	}
+}
+	
 	input := types.HRAInput{
 		HallRequests: hallRequests,
 		States:       types.WorldViewToJSON(types.WorldView),
@@ -53,7 +62,7 @@ func MasterSchedueler(e *types.Elevator, ps *types.PeerState) {
 		fmt.Printf("assignHallRequests error: %v\n", err)
 		return
 	}
-	fmt.Printf("outside error in schedular\n")
+
 
 	for id, matrix := range assignment {
 
@@ -81,7 +90,23 @@ func MasterSchedueler(e *types.Elevator, ps *types.PeerState) {
 				}
 				fmt.Printf("node got order at floor %d and button %d", order.Floor, order.Button)
 				DelegateOrders(id, ps, e, btn)
+				fmt.Println("Master got completed order")
+				types.FullOrderMatrix[ btn.Floor,][btn.Button] = false  // midlertidig plassering
+
 			}
+		}
+		if id == e.MyID {
+			for _, order := range orders {
+				btn := elevio.ButtonEvent{
+					Floor:  order.Floor,
+					Button: order.Button,
+				}
+				ElevatorP.AddOrder(e, btn.Floor, btn.Button)
+				fmt.Printf("I got order at floor %d and button %d", order.Floor, order.Button)
+				types.FullOrderMatrix[btn.Floor][ btn.Button] = false  // midlertidig plassering
+				ElevatorP.HandleAsignedOrder(e, btn.Floor,  btn.Button, doorStartTimerCh)
+			}
+			
 		}
 	}
 }

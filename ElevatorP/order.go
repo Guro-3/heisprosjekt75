@@ -8,7 +8,7 @@ import (
 func AddOrder(e *types.Elevator, btnFloor int, btn elevio.ButtonType) {
 	switch btn {
 	case elevio.BT_Cab:
-		e.CabOrderMatrix[btnFloor][0] = true
+		e.CabOrderMatrix[btnFloor] = true
 		SeCabLight(btnFloor)
 	case elevio.BT_HallUp:
 		e.HallOrderMatrix[btnFloor][elevio.BT_HallUp] = true
@@ -21,7 +21,7 @@ func AddOrder(e *types.Elevator, btnFloor int, btn elevio.ButtonType) {
 
 
 func cabOrdersHere(e *types.Elevator) bool {
-	return e.CabOrderMatrix[e.CurrentFloor][0]
+	return e.CabOrderMatrix[e.CurrentFloor]
 }
 
 func hallOrderUpHere(e *types.Elevator) bool {
@@ -41,7 +41,7 @@ func orderBelow(e *types.Elevator) bool {
 			}
 		}
 		
-		if e.CabOrderMatrix[f][0] {
+		if e.CabOrderMatrix[f] {
 			return true
 		}
 	}
@@ -56,7 +56,7 @@ func orderAbove(e *types.Elevator) bool {
 				return true
 			}
 		}
-		if e.CabOrderMatrix[f][0] {
+		if e.CabOrderMatrix[f] {
 			return true
 		}
 	}
@@ -130,7 +130,7 @@ func shouldClearAtFloorImmediately(e *types.Elevator, btnFloor int, btnType elev
 
 func clearAtCurrentFloor(e *types.Elevator, prevDir elevio.MotorDirection) {
 
-	e.CabOrderMatrix[e.CurrentFloor][0] = false
+	e.CabOrderMatrix[e.CurrentFloor] = false
 	TurnOffCabLight(e.CurrentFloor)
 
 	switch prevDir{
@@ -152,4 +152,15 @@ func clearAtCurrentFloor(e *types.Elevator, prevDir elevio.MotorDirection) {
 			TurnOffHallLight(elevio.BT_HallUp, e.CurrentFloor)
 		}
 	}
+}
+
+
+func HandleAsignedOrder(e *types.Elevator, btnFloor int, btnType elevio.ButtonType, doorStartTimerCh chan int) {
+	if shouldClearAtFloorImmediately(e, btnFloor, btnType) {
+			onDoorOpen(doorStartTimerCh, e)
+			TurnOffHallLight(btnType, btnFloor)
+
+		} else {
+			StartAction(e)
+		}
 }

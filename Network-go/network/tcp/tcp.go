@@ -129,13 +129,13 @@ func HeartbeatTick(e *types.Elevator, ps *types.PeerState, d time.Duration, TCPH
 	defer tic.Stop()
 
 	for range tic.C {
-		cabRequests := types.MatrixToSlice(types.NumFloors, types.NumCabButtons, func(f, b int) bool { return e.CabOrderMatrix[f][b] })
+		
 
 		heartbeat := HeartbeatMessage{
 			CurrentFloor: e.CurrentFloor,
 			State:        e.State,
 			Dir:          e.Dir,
-			CabRequests:  cabRequests,
+			CabRequests:  e.CabOrderMatrix[:],
 		}
 
 		msg := Message{

@@ -8,7 +8,7 @@ type ElevatorStatus struct {
 	Floor       int                   `json:"floor"`
 	Direction   elevio.MotorDirection `json:"direction"`
 	State       ElevatorState         `json:"state"`
-	CabRequests [][]bool              `json:"cabRequests"`
+	CabRequests []bool                `json:"cabRequests"`
 }
 
 var FullOrderMatrix [NumFloors][NumHallButtons]bool
@@ -16,10 +16,10 @@ var NodeOrderMap = make(map[string][]elevio.ButtonEvent)
 var WorldView = make(map[string]ElevatorStatus)
 
 type ElevatorStateJSON struct {
-	Behaviour   string   `json:"behaviour"`
-	Floor       int      `json:"floor"`
-	Direction   string   `json:"direction"`
-	CabRequests [][]bool `json:"cabRequests"`
+	Behaviour   string `json:"behaviour"`
+	Floor       int    `json:"floor"`
+	Direction   string `json:"direction"`
+	CabRequests []bool `json:"cabRequests"`
 }
 
 func WorldViewToJSON(world map[string]ElevatorStatus) map[string]ElevatorStateJSON {
@@ -56,6 +56,16 @@ func WorldViewToJSON(world map[string]ElevatorStatus) map[string]ElevatorStateJS
 }
 
 type HRAInput struct {
-	HallRequests [][]bool                     `json:"hallRequests"`
+	HallRequests [][2]bool               `json:"hallRequests"`
 	States       map[string]ElevatorStateJSON `json:"states"`
+}
+
+
+func UpdateMyState(e *Elevator) {
+    WorldView[e.MyID] = ElevatorStatus{
+        Floor:       e.CurrentFloor,
+        Direction:   e.Dir,
+        State:       e.State,
+        CabRequests: e.CabOrderMatrix[:],
+    }
 }

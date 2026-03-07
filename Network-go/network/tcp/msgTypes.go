@@ -30,7 +30,7 @@ type HeartbeatMessage struct {
 	CurrentFloor int `json:"currentFloor"` 
 	State types.ElevatorState `json:"state"` 
 	Dir elevio.MotorDirection `json:"direction"` 
-	CabRequests [][]bool `json:"cabRequests"` 
+	CabRequests []bool `json:"cabRequests"` 
 }
 
 type SnapshotHallOrdersMessage struct {

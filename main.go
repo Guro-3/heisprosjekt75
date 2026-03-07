@@ -83,7 +83,7 @@ func main() {
 			if e.Mode == types.SingleElevator || btn.Button == elevio.BT_Cab {
 				ElevatorP.ButtonPressedServiceOrder(e, btn.Floor, btn.Button, doorStartTimerCh)
 			} else {
-				messagelogic.ButtonTransmitLogic(ps, e, btn)
+				messagelogic.ButtonTransmitLogic(ps, e, btn, doorStartTimerCh)
 			}
 		case newFloor := <-reechFloorCh:
 			ElevatorP.ServiceOrderAtFloor(e, newFloor, doorStartTimerCh)
@@ -115,7 +115,7 @@ func main() {
 
 		case message := <-TCPRx:
 			fmt.Printf("Message on TCP chan")
-			messagelogic.OnMessageReceive(message, ps, e)
+			messagelogic.OnMessageReceive(message, ps, e,doorStartTimerCh)
 
 		}
 		// til senere.....

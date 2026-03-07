@@ -11,7 +11,7 @@ import (
 	"log"
 )
 
-func OnMessageReceive(msg tcp.Message, ps *types.PeerState, e *types.Elevator) {
+func OnMessageReceive(msg tcp.Message, ps *types.PeerState, e *types.Elevator,doorStartTimerCh chan int) {
 	switch msg.Type {
 	case tcp.MsgHallOrder:
 		bytes, _ := json.Marshal(msg.MessageData)
@@ -25,13 +25,13 @@ func OnMessageReceive(msg tcp.Message, ps *types.PeerState, e *types.Elevator) {
 		case types.RolePrimary:
 			log.Println("Master got hall order")
 			types.FullOrderMatrix[order.Floor][order.Button] = true
-			schedueler.MasterSchedueler(e, ps)
+			schedueler.MasterSchedueler(e, ps,doorStartTimerCh)
 			fmt.Printf("node got order at floor %d and button %d", order.Floor, order.Button)
 
 		default:
 			log.Println("Node got master-message")
 			ElevatorP.AddOrder(e, order.Floor, order.Button)
-			ElevatorP.StartAction(e)
+			ElevatorP.HandleAsignedOrder(e, order.Floor, order.Button, doorStartTimerCh)
 
 		}
 
@@ -89,12 +89,14 @@ func OnMessageReceive(msg tcp.Message, ps *types.PeerState, e *types.Elevator) {
 
 }
 
-func ButtonTransmitLogic(ps *types.PeerState, e *types.Elevator, btn elevio.ButtonEvent) {
+func ButtonTransmitLogic(ps *types.PeerState, e *types.Elevator, btn elevio.ButtonEvent,doorStartTimerCh chan int) {
 	messageData := tcp.HallOrderMessage{Floor: btn.Floor, Button: btn.Button}
 	buttonMessage := tcp.Message{Type: tcp.MsgHallOrder, NodeID: e.MyID, MessageData: messageData}
 	if ps.Role != types.RolePrimary {
 		tcp.SendTCP(ps.PrimaryID, buttonMessage, ps)
 	} else {
 		log.Println("Master got an order!")
+		types.FullOrderMatrix[btn.Floor][btn.Button] = true
+		schedueler.MasterSchedueler(e, ps,doorStartTimerCh)
 	}
 }

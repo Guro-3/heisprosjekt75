@@ -26,7 +26,7 @@ const (
 type Elevator struct {
 	CurrentFloor    int
 	LastFloor       int
-	CabOrderMatrix  [NumFloors][NumCabButtons]bool
+	CabOrderMatrix  [NumFloors]bool
 	HallOrderMatrix [NumFloors][NumHallButtons]bool
 	Dir             elevio.MotorDirection
 	State           ElevatorState
