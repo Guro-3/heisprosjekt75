@@ -54,17 +54,35 @@ func StartPrimaryTCP(ps *types.PeerState, port string, incomingTCP chan Message,
 
 func handleNewNode(conn net.Conn, incomingTCP chan Message, e *types.Elevator) {
 	log.Println("går inn i go handle")
-	reader := bufio.NewReader(conn)
+	reader:= bufio.NewReader(conn)
 
-	msgNodeID, err := reader.ReadString('\n') //hvor langt skal en string være? dette må skrives inn i parantesen
+	line,err := reader.ReadString('\n')
 	if err != nil {
 		log.Printf("Message reading error: %v\n", err)
+		_ = conn.Close()
+		return
+	}
+
+	line = strings.TrimSpace(line)
+
+	var msg Message
+	err = json.Unmarshal([]byte(line), &msg)
+	if err != nil {
+		log.Printf("json decode error: %v\n", err)
 		conn.Close()
 		return
 	}
-	msgNodeID = strings.TrimSpace(msgNodeID)
 
+	if msg.Type != Msghello {
+		log.Printf("expected Msghello, got %v\n", msg.Type)
+		conn.Close()
+		return
+	}
+
+	// NB: nodeConnMap må eksistere som global map i pakken deres
+	msgNodeID := msg.NodeID
 	nodeConnMap[msgNodeID] = conn
+
 	log.Printf("conn to node %v\n:", nodeConnMap[msgNodeID])
 	log.Printf("Node connected to Primary %s\n:", msgNodeID)
 

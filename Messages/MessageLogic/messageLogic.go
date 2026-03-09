@@ -112,6 +112,6 @@ func ButtonTransmitLogic(ps *types.PeerState, e *types.Elevator, btn elevio.Butt
 
 func BackupHallOrderACK(ps *types.PeerState, e *types.Elevator) {
 	messageData := tcp.BackupHallOrderACK{Ack: true}
-	buttonMessage := tcp.Message{Type: tcp.MsgHallOrder, NodeID: e.MyID, MessageData: messageData}
+	buttonMessage := tcp.Message{Type: tcp.MsgBackupHallOrderACK, NodeID: e.MyID, MessageData: messageData}
 	tcp.SendTCP(ps.PrimaryID, buttonMessage, ps)
 }
