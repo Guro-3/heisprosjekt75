@@ -6,14 +6,14 @@ import (
 	"heisprosjekt75/types"
 )
 
-func onDoorOpen(doorStartTimerCh chan int, e *types.Elevator) {
+func onDoorOpen(doorStartTimerCh chan int, e *types.Elevator,ps *types.PeerState) {
 	prevDir := e.Dir
 	e.State = types.DoorOpen
 
 	elevio.SetMotorDirection(elevio.MD_Stop)
 	elevio.SetDoorOpenLamp(true)
 
-	clearAtCurrentFloor(e, prevDir)
+	clearAtCurrentFloor(e, prevDir,ps)
 	doorStartTimerCh <- types.TimeDoorOpenDuration
 }
 

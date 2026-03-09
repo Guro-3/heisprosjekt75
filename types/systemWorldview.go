@@ -12,7 +12,7 @@ type ElevatorStatus struct {
 }
 
 var FullOrderMatrix [NumFloors][NumHallButtons]bool
-var NodeOrderMap = make(map[string][]elevio.ButtonEvent)
+
 var WorldView = make(map[string]ElevatorStatus)
 
 type ElevatorStateJSON struct {

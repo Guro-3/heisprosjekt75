@@ -3,7 +3,7 @@ package tcp
 import (
 	"bufio"
 	"encoding/json"
-	"fmt"
+
 	"heisprosjekt75/types"
 	"log"
 	"net"
@@ -33,7 +33,8 @@ func readLoop(conn net.Conn, incomingTCP chan Message) {
 	}
 }
 
-func StartPrimaryTCP(ps *types.PeerState, port string, incomingTCP chan Message) {
+func StartPrimaryTCP(ps *types.PeerState, port string, incomingTCP chan Message, e *types.Elevator) {
+
 	log.Println("starting primary")
 	listener, err := net.Listen("tcp", ":"+port)
 	if err != nil {
@@ -46,13 +47,13 @@ func StartPrimaryTCP(ps *types.PeerState, port string, incomingTCP chan Message)
 				log.Println("Error with listning object")
 				continue
 			}
-			go handleNewNode(conn, incomingTCP)
+			go handleNewNode(conn, incomingTCP, e)
 		}
 	}()
 }
 
-func handleNewNode(conn net.Conn, incomingTCP chan Message) {
-
+func handleNewNode(conn net.Conn, incomingTCP chan Message, e *types.Elevator) {
+	log.Println("går inn i go handle")
 	reader := bufio.NewReader(conn)
 
 	msgNodeID, err := reader.ReadString('\n') //hvor langt skal en string være? dette må skrives inn i parantesen
@@ -62,33 +63,71 @@ func handleNewNode(conn net.Conn, incomingTCP chan Message) {
 		return
 	}
 	msgNodeID = strings.TrimSpace(msgNodeID)
+
 	nodeConnMap[msgNodeID] = conn
+	log.Printf("conn to node %v\n:", nodeConnMap[msgNodeID])
 	log.Printf("Node connected to Primary %s\n:", msgNodeID)
+
 	writer := bufio.NewWriter(conn)
-	writer.WriteString("WELCOME_" + msgNodeID + "\n")
+
+	welcome := Message{
+		Type:   Msgwelcome,
+		NodeID: e.MyID,
+		MessageData: WelcomeMessage{
+			NodeID: msgNodeID,
+		},
+	}
+
+	jsonMsg, err := json.Marshal(welcome)
+	if err != nil {
+		log.Println("json marshal error:", err)
+		return
+	}
+
+	writer.WriteString(string(jsonMsg) + "\n")
 	writer.Flush()
 
 	go readLoop(conn, incomingTCP)
 }
 
 func ConnectToPrimary(ps *types.PeerState, port string, e *types.Elevator, incomingTCP chan Message) {
+
 	primaryAddr := ps.PrimaryIP + ":" + port
 
-	conn, err := net.Dial("tcp", primaryAddr)
-	if err != nil {
-		log.Println("Error accepting conn; ", err)
-		return
-	}
+	for {
 
-	writer := bufio.NewWriter(conn)
-	ps.PrimaryConn = conn
-	writer.WriteString(e.MyID + "\n")
-	writer.Flush()
-	msg := fmt.Sprintf("HELLO|%s|%s", e.MyID, types.RoleToString(ps.Role))
-	writer.WriteString(msg + "\n")
-	writer.Flush()
-	log.Println("ID connected to primary: ", e.MyID)
-	go readLoop(conn, incomingTCP)
+		conn, err := net.Dial("tcp", primaryAddr)
+		if err != nil {
+			log.Println("Error connecting to primary:", err)
+			time.Sleep(5 * time.Millisecond)
+			continue
+		}
+
+		ps.PrimaryConn = conn
+		writer := bufio.NewWriter(conn)
+
+		hello := Message{
+			Type:   Msghello,
+			NodeID: e.MyID,
+			MessageData: HelloMessage{
+				Role: types.RoleToString(ps.Role),
+			},
+		}
+
+		jsonMsg, err := json.Marshal(hello)
+		if err != nil {
+			log.Println("json marshal error:", err)
+			return
+		}
+
+		writer.WriteString(string(jsonMsg) + "\n")
+		writer.Flush()
+
+		log.Println("Connected to primary")
+
+		go readLoop(conn, incomingTCP)
+		break
+	}
 }
 
 func SendTCP(recieverID string, message Message, ps *types.PeerState) {
@@ -101,8 +140,14 @@ func SendTCP(recieverID string, message Message, ps *types.PeerState) {
 
 	if ps.Role == types.RolePrimary {
 		conn, excist := nodeConnMap[recieverID]
-		if !excist || conn == nil {
-			log.Printf("No conn for receiver %s\n", recieverID)
+		log.Printf("Node connected to Primary recieverID: %s\n:", recieverID)
+		log.Printf("conn to node %v\n:", nodeConnMap[recieverID])
+
+		if !excist {
+			log.Printf("No nodes in nodeConnMap %s\n", recieverID)
+			return
+		} else if conn == nil {
+			log.Printf("No receiver in conn%s\n", recieverID)
 			return
 		}
 		connNode = conn
@@ -129,7 +174,6 @@ func HeartbeatTick(e *types.Elevator, ps *types.PeerState, d time.Duration, TCPH
 	defer tic.Stop()
 
 	for range tic.C {
-		
 
 		heartbeat := HeartbeatMessage{
 			CurrentFloor: e.CurrentFloor,

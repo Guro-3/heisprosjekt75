@@ -2,7 +2,6 @@ package messagelogic
 
 import (
 	"encoding/json"
-	"fmt"
 	"heisprosjekt75/Driver-go/elevio"
 	"heisprosjekt75/ElevatorP"
 	"heisprosjekt75/Network-go/network/tcp"
@@ -11,7 +10,7 @@ import (
 	"log"
 )
 
-func OnMessageReceive(msg tcp.Message, ps *types.PeerState, e *types.Elevator,doorStartTimerCh chan int) {
+func OnMessageReceive(msg tcp.Message, ps *types.PeerState, e *types.Elevator, doorStartTimerCh chan int) {
 	switch msg.Type {
 	case tcp.MsgHallOrder:
 		bytes, _ := json.Marshal(msg.MessageData)
@@ -19,19 +18,14 @@ func OnMessageReceive(msg tcp.Message, ps *types.PeerState, e *types.Elevator,do
 		var order tcp.HallOrderMessage
 		json.Unmarshal(bytes, &order)
 
-		log.Printf("Received order at floor: %d, button: %d\n", order.Floor, order.Button)
-
 		switch ps.Role {
 		case types.RolePrimary:
-			log.Println("Master got hall order")
+
 			types.FullOrderMatrix[order.Floor][order.Button] = true
-			schedueler.MasterSchedueler(e, ps,doorStartTimerCh)
-			fmt.Printf("node got order at floor %d and button %d", order.Floor, order.Button)
 
 		default:
-			log.Println("Node got master-message")
-			ElevatorP.AddOrder(e, order.Floor, order.Button)
-			ElevatorP.HandleAsignedOrder(e, order.Floor, order.Button, doorStartTimerCh)
+
+			ElevatorP.HandleAsignedOrder(e, order.Floor, order.Button, doorStartTimerCh, ps)
 
 		}
 
@@ -41,11 +35,12 @@ func OnMessageReceive(msg tcp.Message, ps *types.PeerState, e *types.Elevator,do
 		var orderComplete tcp.CompletedOrderMessage
 		json.Unmarshal(bytes, &orderComplete)
 
-		log.Printf(" completed order at floor: %d, button: %d\n", orderComplete.Floor, orderComplete.Button)
+		log.Printf("Completed order at floor: %d, button: %d\n", orderComplete.Floor, orderComplete.Button)
 
 		switch ps.Role {
 		case types.RolePrimary:
 			log.Println("Master got completed order")
+			types.FullOrderMatrix[orderComplete.Floor][orderComplete.Button] = false
 		default:
 			log.Println("will not happen")
 		}
@@ -55,8 +50,6 @@ func OnMessageReceive(msg tcp.Message, ps *types.PeerState, e *types.Elevator,do
 
 		var heartBeat tcp.HeartbeatMessage
 		json.Unmarshal(bytes, &heartBeat)
-
-		log.Printf("Received heartbeat")
 
 		switch ps.Role {
 		case types.RolePrimary:
@@ -81,22 +74,44 @@ func OnMessageReceive(msg tcp.Message, ps *types.PeerState, e *types.Elevator,do
 
 		switch ps.Role {
 		case types.RoleBackup:
-			log.Println("backup received snapshot from master ")
+			log.Println("backup received snapshot from master")
+			types.FullOrderMatrix = snapshot.Hall
+			BackupHallOrderACK(ps, e)
+
 		default:
 			log.Println("wil not happend")
 		}
-	}
+	case tcp.MsgBackupHallOrderACK:
+		bytes, _ := json.Marshal(msg.MessageData)
 
+		var HallOrderACK tcp.BackupHallOrderACK
+		json.Unmarshal(bytes, &HallOrderACK)
+
+		log.Printf("Received snapshot")
+
+		switch ps.Role {
+		case types.RolePrimary:
+			schedueler.MasterSchedueler(e, ps, doorStartTimerCh)
+		default:
+			log.Println("wil not happend")
+
+		}
+	}
 }
 
-func ButtonTransmitLogic(ps *types.PeerState, e *types.Elevator, btn elevio.ButtonEvent,doorStartTimerCh chan int) {
+func ButtonTransmitLogic(ps *types.PeerState, e *types.Elevator, btn elevio.ButtonEvent, doorStartTimerCh chan int) {
 	messageData := tcp.HallOrderMessage{Floor: btn.Floor, Button: btn.Button}
 	buttonMessage := tcp.Message{Type: tcp.MsgHallOrder, NodeID: e.MyID, MessageData: messageData}
 	if ps.Role != types.RolePrimary {
 		tcp.SendTCP(ps.PrimaryID, buttonMessage, ps)
 	} else {
-		log.Println("Master got an order!")
 		types.FullOrderMatrix[btn.Floor][btn.Button] = true
-		schedueler.MasterSchedueler(e, ps,doorStartTimerCh)
+		schedueler.MasterSchedueler(e, ps, doorStartTimerCh)
 	}
+}
+
+func BackupHallOrderACK(ps *types.PeerState, e *types.Elevator) {
+	messageData := tcp.BackupHallOrderACK{Ack: true}
+	buttonMessage := tcp.Message{Type: tcp.MsgHallOrder, NodeID: e.MyID, MessageData: messageData}
+	tcp.SendTCP(ps.PrimaryID, buttonMessage, ps)
 }

@@ -1,7 +1,8 @@
 package ElevatorP
 
 import (
-	"heisprosjekt75/Driver-go/elevio"	
+	"heisprosjekt75/Driver-go/elevio"
+	"heisprosjekt75/Messages/MessageComplete"
 	"heisprosjekt75/types"
 )
 
@@ -19,7 +20,6 @@ func AddOrder(e *types.Elevator, btnFloor int, btn elevio.ButtonType) {
 	}
 }
 
-
 func cabOrdersHere(e *types.Elevator) bool {
 	return e.CabOrderMatrix[e.CurrentFloor]
 }
@@ -32,25 +32,23 @@ func hallOrderDownHere(e *types.Elevator) bool {
 	return e.HallOrderMatrix[e.CurrentFloor][elevio.BT_HallDown]
 }
 
-
 func orderBelow(e *types.Elevator) bool {
-	for f := e.CurrentFloor- 1; f >= 0; f-- {
+	for f := e.CurrentFloor - 1; f >= 0; f-- {
 		for b := 0; b < types.NumHallButtons; b++ {
 			if e.HallOrderMatrix[f][b] {
 				return true
 			}
 		}
-		
+
 		if e.CabOrderMatrix[f] {
 			return true
 		}
 	}
 	return false
 }
-
 
 func orderAbove(e *types.Elevator) bool {
-	for f := e.CurrentFloor+ 1; f < types.NumFloors; f++ {
+	for f := e.CurrentFloor + 1; f < types.NumFloors; f++ {
 		for b := 0; b < types.NumHallButtons; b++ {
 			if e.HallOrderMatrix[f][b] {
 				return true
@@ -63,9 +61,8 @@ func orderAbove(e *types.Elevator) bool {
 	return false
 }
 
-
 func chooseDirection(e *types.Elevator) (elevio.MotorDirection, types.ElevatorState) {
-	switch e.Dir{
+	switch e.Dir {
 
 	case elevio.MD_Up:
 		if orderAbove(e) {
@@ -78,7 +75,7 @@ func chooseDirection(e *types.Elevator) (elevio.MotorDirection, types.ElevatorSt
 		return elevio.MD_Stop, types.Idle
 
 	case elevio.MD_Down:
-	
+
 		if orderBelow(e) {
 			return elevio.MD_Down, types.Moving
 		}
@@ -88,7 +85,7 @@ func chooseDirection(e *types.Elevator) (elevio.MotorDirection, types.ElevatorSt
 		return elevio.MD_Stop, types.Idle
 
 	case elevio.MD_Stop:
-		
+
 		if orderAbove(e) {
 			return elevio.MD_Up, types.Moving
 		}
@@ -102,9 +99,8 @@ func chooseDirection(e *types.Elevator) (elevio.MotorDirection, types.ElevatorSt
 	}
 }
 
-
 func shouldStop(e *types.Elevator) bool {
-	switch e.Dir{
+	switch e.Dir {
 	case elevio.MD_Up:
 		return cabOrdersHere(e) || hallOrderUpHere(e) || !orderAbove(e)
 	case elevio.MD_Down:
@@ -118,7 +114,6 @@ func shouldStop(e *types.Elevator) bool {
 	}
 }
 
-
 func shouldClearAtFloorImmediately(e *types.Elevator, btnFloor int, btnType elevio.ButtonType) bool {
 	return e.CurrentFloor == btnFloor &&
 		((e.Dir == elevio.MD_Up && btnType == elevio.BT_HallUp) ||
@@ -127,40 +122,55 @@ func shouldClearAtFloorImmediately(e *types.Elevator, btnFloor int, btnType elev
 			(btnType == elevio.BT_Cab))
 }
 
-
-func clearAtCurrentFloor(e *types.Elevator, prevDir elevio.MotorDirection) {
+func clearAtCurrentFloor(e *types.Elevator, prevDir elevio.MotorDirection, ps *types.PeerState) {
 
 	e.CabOrderMatrix[e.CurrentFloor] = false
 	TurnOffCabLight(e.CurrentFloor)
 
-	switch prevDir{
+	var btnType elevio.ButtonType
+	
+	
+	switch prevDir {
 	case elevio.MD_Up:
 		e.HallOrderMatrix[e.CurrentFloor][elevio.BT_HallUp] = false
 		TurnOffHallLight(elevio.BT_HallUp, e.CurrentFloor)
-		
+		btnType = elevio.BT_HallUp
+
 		if !orderAbove(e) {
 			e.HallOrderMatrix[e.CurrentFloor][elevio.BT_HallDown] = false
 			TurnOffHallLight(elevio.BT_HallDown, e.CurrentFloor)
+			btnType = elevio.BT_HallDown
 		}
 	case elevio.MD_Down:
-		
+
 		e.HallOrderMatrix[e.CurrentFloor][elevio.BT_HallDown] = false
 		TurnOffHallLight(elevio.BT_HallDown, e.CurrentFloor)
-		
-		if !orderBelow(e)  {
+		btnType = elevio.BT_HallDown
+
+		if !orderBelow(e) {
 			e.HallOrderMatrix[e.CurrentFloor][elevio.BT_HallUp] = false
 			TurnOffHallLight(elevio.BT_HallUp, e.CurrentFloor)
+			btnType = elevio.BT_HallUp
 		}
 	}
+	btn := elevio.ButtonEvent{ 
+		Floor: e.CurrentFloor,
+		Button: btnType,
+	}
+
+	if e.Mode == types.PrimaryBackup{
+		messagecomplete.OrderCompleted( btn ,e ,ps)
+	}
+	
 }
 
-
-func HandleAsignedOrder(e *types.Elevator, btnFloor int, btnType elevio.ButtonType, doorStartTimerCh chan int) {
+func HandleAsignedOrder(e *types.Elevator, btnFloor int, btnType elevio.ButtonType, doorStartTimerCh chan int, ps *types.PeerState) {
 	if shouldClearAtFloorImmediately(e, btnFloor, btnType) {
-			onDoorOpen(doorStartTimerCh, e)
-			TurnOffHallLight(btnType, btnFloor)
+		onDoorOpen(doorStartTimerCh, e, ps)
+		TurnOffHallLight(btnType, btnFloor)
 
-		} else {
-			StartAction(e)
-		}
+	} else {
+		AddOrder(e, btnFloor, btnType)
+		StartAction(e)
+	}
 }

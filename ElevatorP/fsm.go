@@ -8,16 +8,15 @@ import (
 
 
 
-func ButtonPressedServiceOrder(e *types.Elevator, btnFloor int, btnType elevio.ButtonType, doorStartTimerCh chan int) {
+func ButtonPressedServiceOrder(e *types.Elevator, btnFloor int, btnType elevio.ButtonType, doorStartTimerCh chan int, ps *types.PeerState) {
 	fmt.Print("In func buttonPressedServiceOrder: \n")
 	
-	fmt.Print("Elevator is in single Mode \n")
 
 	switch e.State {
 
 	case types.DoorOpen:
 		if shouldClearAtFloorImmediately(e, btnFloor, btnType) {
-			onDoorOpen(doorStartTimerCh, e)
+			onDoorOpen(doorStartTimerCh, e, ps)
 			TurnOffHallLight(btnType, btnFloor)
 
 		} else {
@@ -31,7 +30,7 @@ func ButtonPressedServiceOrder(e *types.Elevator, btnFloor int, btnType elevio.B
 	case types.Idle:
 
 		if shouldClearAtFloorImmediately(e, btnFloor, btnType) {
-			onDoorOpen(doorStartTimerCh, e)
+			onDoorOpen(doorStartTimerCh, e, ps)
 			TurnOffHallLight(btnType, btnFloor)
 			return
 		}
@@ -61,7 +60,7 @@ func StartAction(e *types.Elevator) {
 }
 
 
-func ServiceOrderAtFloor(e *types.Elevator, newFloor int, doorStartTimerCh chan int) {
+func ServiceOrderAtFloor(e *types.Elevator, newFloor int, doorStartTimerCh chan int, ps *types.PeerState) {
 	e.CurrentFloor = newFloor
 	FloorLight(e)
 
@@ -69,7 +68,7 @@ func ServiceOrderAtFloor(e *types.Elevator, newFloor int, doorStartTimerCh chan 
 		return
 	}
 	if shouldStop(e) {
-		onDoorOpen(doorStartTimerCh, e)
+		onDoorOpen(doorStartTimerCh, e, ps)
 	}
 }
 

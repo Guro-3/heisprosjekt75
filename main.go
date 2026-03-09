@@ -5,16 +5,16 @@ import (
 	"fmt"
 	"heisprosjekt75/Driver-go/elevio"
 	"heisprosjekt75/ElevatorP"
+	messagelogic "heisprosjekt75/Messages/MessageLogic"
 	"heisprosjekt75/Network-go/network"
 	"heisprosjekt75/Network-go/network/bcast"
 	"heisprosjekt75/Network-go/network/localip"
 	PrimaryHeartbeat "heisprosjekt75/Network-go/network/primaryHeartbeat"
 	"heisprosjekt75/Network-go/network/tcp"
-	messagelogic "heisprosjekt75/RoleLogic/MessageLogic"
 	rolechanges "heisprosjekt75/RoleLogic/RoleChanges"
 	"heisprosjekt75/RoleLogic/RoleManager"
+	schedueler "heisprosjekt75/Schedueler"
 
-	//schedueler "heisprosjekt75/Schedueler"
 	"heisprosjekt75/types"
 	"time"
 )
@@ -81,12 +81,12 @@ func main() {
 		select {
 		case btn := <-reaciveBtnCh:
 			if e.Mode == types.SingleElevator || btn.Button == elevio.BT_Cab {
-				ElevatorP.ButtonPressedServiceOrder(e, btn.Floor, btn.Button, doorStartTimerCh)
+				ElevatorP.ButtonPressedServiceOrder(e, btn.Floor, btn.Button, doorStartTimerCh, ps)
 			} else {
 				messagelogic.ButtonTransmitLogic(ps, e, btn, doorStartTimerCh)
 			}
 		case newFloor := <-reechFloorCh:
-			ElevatorP.ServiceOrderAtFloor(e, newFloor, doorStartTimerCh)
+			ElevatorP.ServiceOrderAtFloor(e, newFloor, doorStartTimerCh, ps)
 		case <-doorTimeoutCh:
 			ElevatorP.OnDoortimeout(doorStartTimerCh, e)
 		case p := <-peerUpdateCh:
@@ -103,19 +103,27 @@ func main() {
 					go tcp.HeartbeatTick(e, ps, 5*time.Second, TCPHeartbeatCh)
 				}
 			}
+
+		
+			if len(p.Lost) > 0 && ps.Role == types.RolePrimary {
+				schedueler.MasterSchedueler(e, ps, doorStartTimerCh)
+				fmt.Printf("Primary lost, redeligating orders \n")
+			}
+			
 			// TEST: hvis jeg er primary og har backupID
 
 		case PrimaryIdIp := <-UDPHeartbeatRx:
 			//fmt.Printf("  PrimaryID:    %q\n", PrimaryIdIp.PrimaryID)
 			//fmt.Printf("  PrimaryIP:    %q\n", PrimaryIdIp.PrimaryAddrTCP)
+
 			ps.PrimaryID = PrimaryIdIp.PrimaryID
 			ps.PrimaryIP = PrimaryIdIp.PrimaryAddrTCP
 			//btn := elevio.ButtonEvent{Floor: 2, Button: elevio.BT_HallDown}
 			//schedueler.DelegateOrders(ps.BackupID, ps, e, btn)
 
 		case message := <-TCPRx:
-			fmt.Printf("Message on TCP chan")
-			messagelogic.OnMessageReceive(message, ps, e,doorStartTimerCh)
+
+			messagelogic.OnMessageReceive(message, ps, e, doorStartTimerCh)
 
 		}
 		// til senere.....

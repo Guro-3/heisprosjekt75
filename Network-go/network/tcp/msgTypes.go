@@ -1,7 +1,6 @@
 package tcp
 
 import (
-	
 	"heisprosjekt75/Driver-go/elevio"
 	"heisprosjekt75/types"
 	"net"
@@ -15,6 +14,11 @@ const (
 	MsgSnapshot
 	MsgHallOrder
 	MsgCompletedOrder
+	MsgBackupHallOrderACK
+	Msghello
+	Msgwelcome
+	
+	
 )
 
 
@@ -35,7 +39,21 @@ type HeartbeatMessage struct {
 
 type SnapshotHallOrdersMessage struct {
 	
-	Hall [][]bool `json:"hall"`
+	Hall [types.NumFloors][types.NumHallButtons]bool `json:"hall"`
+}
+
+type BackupHallOrderACK struct {
+	Ack bool `json:"ack"`
+	
+}
+
+type HelloMessage struct {
+	Role string `json:"role"`
+}
+
+
+type WelcomeMessage struct {
+	NodeID string `json:"role"`
 }
 
 
