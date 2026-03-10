@@ -13,7 +13,7 @@ import (
 	"heisprosjekt75/Network-go/network/tcp"
 	rolechanges "heisprosjekt75/RoleLogic/RoleChanges"
 	"heisprosjekt75/RoleLogic/RoleManager"
-
+	schedueler "heisprosjekt75/Schedueler"
 	"heisprosjekt75/types"
 	"time"
 )
@@ -104,10 +104,11 @@ func main() {
 				}
 			}
 
-			//if len(p.Lost) > 0 && ps.Role == types.RolePrimary {
-			//	schedueler.MasterSchedueler(e, ps, doorStartTimerCh)
-			//	fmt.Printf("Primary lost, redeligating orders \n")
-			//}
+			if len(p.Lost) > 0 && ps.Role == types.RolePrimary {
+				fmt.Printf("fulorder matrix:%v\n", types.FullOrderMatrix)
+				schedueler.MasterSchedueler(e, ps, doorStartTimerCh)
+				fmt.Printf("Primary lost, redeligating orders \n")
+			}
 
 			// TEST: hvis jeg er primary og har backupID
 

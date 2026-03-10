@@ -2,12 +2,15 @@ package network
 
 import (
 	"fmt"
+	"heisprosjekt75/Network-go/network/localip"
 	"heisprosjekt75/Network-go/network/peers"
-	"os"
+	"time"
 )
 
 func NetworkInit() (id string, peerUpdateCh <-chan peers.PeerUpdate) {
-	id = fmt.Sprintf("%s-%d", "localhost", os.Getpid())
+	ip, _ := localip.LocalIP()
+	id = fmt.Sprintf("%d-%s", time.Now().UnixNano(), ip)
+
 	ch := make(chan peers.PeerUpdate, 10)
 
 	peerTxEnable := make(chan bool, 1)
