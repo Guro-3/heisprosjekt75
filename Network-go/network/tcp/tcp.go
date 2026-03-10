@@ -54,9 +54,9 @@ func StartPrimaryTCP(ps *types.PeerState, port string, incomingTCP chan Message,
 
 func handleNewNode(conn net.Conn, incomingTCP chan Message, e *types.Elevator) {
 	log.Println("går inn i go handle")
-	reader:= bufio.NewReader(conn)
+	reader := bufio.NewReader(conn)
 
-	line,err := reader.ReadString('\n')
+	line, err := reader.ReadString('\n')
 	if err != nil {
 		log.Printf("Message reading error: %v\n", err)
 		_ = conn.Close()
@@ -184,14 +184,13 @@ func SendTCP(recieverID string, message Message, ps *types.PeerState) {
 }
 
 func HeartbeatTick(e *types.Elevator, ps *types.PeerState, d time.Duration, TCPHeartBeat chan<- Message) {
-	if ps.Role == types.RolePrimary {
-		return
-	}
-
 	tic := time.NewTicker(d)
 	defer tic.Stop()
 
 	for range tic.C {
+		if ps.Role == types.RolePrimary {
+			continue
+		}
 
 		heartbeat := HeartbeatMessage{
 			CurrentFloor: e.CurrentFloor,

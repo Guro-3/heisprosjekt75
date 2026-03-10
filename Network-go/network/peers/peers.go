@@ -82,6 +82,7 @@ func Receiver(myId string, peerUpdateCh chan<- PeerUpdate) {
 				}
 				if updated {
 					p.Peers = make([]string, 0, len(lastSeen))
+					p.Peers = append(p.Peers, myId)
 					for k := range lastSeen {
 						p.Peers = append(p.Peers, k)
 					}

@@ -2,6 +2,7 @@ package messagelogic
 
 import (
 	"encoding/json"
+	"fmt"
 	"heisprosjekt75/Driver-go/elevio"
 	"heisprosjekt75/ElevatorP"
 	"heisprosjekt75/Network-go/network/tcp"
@@ -22,6 +23,7 @@ func OnMessageReceive(msg tcp.Message, ps *types.PeerState, e *types.Elevator, d
 		case types.RolePrimary:
 
 			types.FullOrderMatrix[order.Floor][order.Button] = true
+			SendSnapshot(ps, e, types.FullOrderMatrix)
 
 		default:
 
@@ -42,7 +44,7 @@ func OnMessageReceive(msg tcp.Message, ps *types.PeerState, e *types.Elevator, d
 			log.Println("Master got completed order")
 			types.FullOrderMatrix[orderComplete.Floor][orderComplete.Button] = false
 		default:
-			log.Println("will not happen")
+			log.Println("shall not happen msg complete order")
 		}
 
 	case tcp.MsgHeartbeat:
@@ -61,7 +63,7 @@ func OnMessageReceive(msg tcp.Message, ps *types.PeerState, e *types.Elevator, d
 
 			//fmt.Printf("state %v\n", heartBeat.State)
 		default:
-			log.Println("will not happend")
+			log.Println("shall not happen msgHeartbeat")
 		}
 
 	case tcp.MsgSnapshot:
@@ -79,7 +81,7 @@ func OnMessageReceive(msg tcp.Message, ps *types.PeerState, e *types.Elevator, d
 			BackupHallOrderACK(ps, e)
 
 		default:
-			log.Println("wil not happend")
+			log.Println("shall not happend Msgsnapshot")
 		}
 	case tcp.MsgBackupHallOrderACK:
 		bytes, _ := json.Marshal(msg.MessageData)
@@ -93,7 +95,7 @@ func OnMessageReceive(msg tcp.Message, ps *types.PeerState, e *types.Elevator, d
 		case types.RolePrimary:
 			schedueler.MasterSchedueler(e, ps, doorStartTimerCh)
 		default:
-			log.Println("wil not happend")
+			log.Println("shall not happend MsgBackupHallOrderACK")
 
 		}
 	}
@@ -104,9 +106,11 @@ func ButtonTransmitLogic(ps *types.PeerState, e *types.Elevator, btn elevio.Butt
 	buttonMessage := tcp.Message{Type: tcp.MsgHallOrder, NodeID: e.MyID, MessageData: messageData}
 	if ps.Role != types.RolePrimary {
 		tcp.SendTCP(ps.PrimaryID, buttonMessage, ps)
+		fmt.Println("ankommet buttontransmitt logic som ikk master")
 	} else {
 		types.FullOrderMatrix[btn.Floor][btn.Button] = true
-		schedueler.MasterSchedueler(e, ps, doorStartTimerCh)
+		SendSnapshot(ps, e, types.FullOrderMatrix)
+
 	}
 }
 
@@ -114,4 +118,10 @@ func BackupHallOrderACK(ps *types.PeerState, e *types.Elevator) {
 	messageData := tcp.BackupHallOrderACK{Ack: true}
 	buttonMessage := tcp.Message{Type: tcp.MsgBackupHallOrderACK, NodeID: e.MyID, MessageData: messageData}
 	tcp.SendTCP(ps.PrimaryID, buttonMessage, ps)
+}
+
+func SendSnapshot(ps *types.PeerState, e *types.Elevator, hallOrderMAtrix [types.NumFloors][types.NumHallButtons]bool) {
+	messageData := tcp.SnapshotHallOrdersMessage{Hall: hallOrderMAtrix}
+	buttonMessage := tcp.Message{Type: tcp.MsgSnapshot, NodeID: e.MyID, MessageData: messageData}
+	tcp.SendTCP(ps.BackupID, buttonMessage, ps)
 }
