@@ -46,6 +46,7 @@ func main() {
 
 	//---------------------------------------------------------------------------------------------------------------------
 	ip, _ := localip.LocalIP()
+	fmt.Printf("LOCAL IP: %q\n", ip)
 
 	e := ElevatorP.NewElevator(id, ip)
 

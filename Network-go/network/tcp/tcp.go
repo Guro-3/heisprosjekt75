@@ -110,14 +110,19 @@ func handleNewNode(conn net.Conn, incomingTCP chan Message, e *types.Elevator) {
 
 func ConnectToPrimary(ps *types.PeerState, port string, e *types.Elevator, incomingTCP chan Message) {
 
-	primaryAddr := ps.PrimaryIP + ":" + port
-
 	for {
+		log.Printf("DEBUG ConnectToPrimary: PrimaryID=%q PrimaryIP=%q port=%q", ps.PrimaryID, ps.PrimaryIP, port)
+
+		if ps.PrimaryIP == "" {
+			time.Sleep(100 * time.Millisecond)
+			continue
+		}
+		primaryAddr := ps.PrimaryIP + ":" + port
 
 		conn, err := net.Dial("tcp", primaryAddr)
 		if err != nil {
 			log.Println("Error connecting to primary:", err)
-			time.Sleep(5 * time.Millisecond)
+			time.Sleep(5 * time.Second)
 			continue
 		}
 
