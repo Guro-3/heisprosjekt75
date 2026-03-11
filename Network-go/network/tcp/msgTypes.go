@@ -17,6 +17,8 @@ const (
 	MsgBackupHallOrderACK
 	Msghello
 	Msgwelcome
+	MsgSetHallLights
+	MsgTurnOffHallLights
 	
 	
 )
@@ -65,6 +67,16 @@ type HallOrderMessage struct {
 type CompletedOrderMessage struct {
 	Floor  int `json:"floor"`
 	Button elevio.ButtonType `json:"button"`
+}
+
+type HallLightsOnMessage struct {
+	Floor  int `json:"floor"`
+	Button elevio.ButtonType `json:"button"` 
+}
+
+type HallLightsOffMessage struct {
+	Floor  int `json:"floor"`
+	Button elevio.ButtonType `json:"button"` 
 }
 
 var nodeConnMap = make(map[string]net.Conn)

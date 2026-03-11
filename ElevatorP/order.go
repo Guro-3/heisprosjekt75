@@ -10,7 +10,7 @@ func AddOrder(e *types.Elevator, btnFloor int, btn elevio.ButtonType) {
 	switch btn {
 	case elevio.BT_Cab:
 		e.CabOrderMatrix[btnFloor] = true
-		SeCabLight(btnFloor)
+		SetCabLight(btnFloor)
 	case elevio.BT_HallUp:
 		e.HallOrderMatrix[btnFloor][elevio.BT_HallUp] = true
 		SetHallLight(elevio.BT_HallUp, btnFloor)

@@ -5,7 +5,7 @@ import (
 	"heisprosjekt75/types"
 )
 
-func SeCabLight(floor int){
+func SetCabLight(floor int){
 	elevio.SetButtonLamp(elevio.BT_Cab, floor, true)
 }
 func TurnOffCabLight(floor int){
@@ -21,4 +21,15 @@ func TurnOffHallLight(btn elevio.ButtonType, floor int){
 func FloorLight(e *types.Elevator){
 	floor := e.CurrentFloor
 	elevio.SetFloorIndicator(floor)
+}
+
+
+func LightInit() {
+	for f := 0; f < types.NumFloors; f++ {
+		for b := 0; b < types.NumHallButtons; b++ {
+			TurnOffHallLight(elevio.ButtonType(b),f)
+		}
+
+		TurnOffCabLight(f)
+	}
 }

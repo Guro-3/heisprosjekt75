@@ -1,11 +1,12 @@
 package ElevatorP
 
 import (
-	"heisprosjekt75/types"
 	"heisprosjekt75/Driver-go/elevio"
+	"heisprosjekt75/types"
 )
 
 func NewElevator(myID string, myIP string) *types.Elevator {
+	LightInit()
 
 	e := &types.Elevator{
 		MyID:   myID,

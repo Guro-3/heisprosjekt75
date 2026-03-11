@@ -6,6 +6,7 @@ import (
 	"heisprosjekt75/Driver-go/elevio"
 	"heisprosjekt75/ElevatorP"
 	messagelogic "heisprosjekt75/Messages/MessageLogic"
+	sendmessages "heisprosjekt75/Messages/SendMessages"
 	"heisprosjekt75/Network-go/network"
 	"heisprosjekt75/Network-go/network/bcast"
 	"heisprosjekt75/Network-go/network/localip"
@@ -83,7 +84,7 @@ func main() {
 			if e.Mode == types.SingleElevator || btn.Button == elevio.BT_Cab {
 				ElevatorP.ButtonPressedServiceOrder(e, btn.Floor, btn.Button, doorStartTimerCh, ps)
 			} else {
-				messagelogic.ButtonTransmitLogic(ps, e, btn, doorStartTimerCh)
+				sendmessages.ButtonTransmitLogic(ps, e, btn)
 			}
 		case newFloor := <-reechFloorCh:
 			ElevatorP.ServiceOrderAtFloor(e, newFloor, doorStartTimerCh, ps)
