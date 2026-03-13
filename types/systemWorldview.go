@@ -15,6 +15,10 @@ var FullOrderMatrix [NumFloors][NumHallButtons]bool
 
 var WorldView = make(map[string]ElevatorStatus)
 
+type HAllAssignment [NumFloors][NumHallButtons]bool
+
+var CurrentAssignment = make(map[string]HAllAssignment)
+
 type ElevatorStateJSON struct {
 	Behaviour   string `json:"behaviour"`
 	Floor       int    `json:"floor"`
@@ -56,16 +60,15 @@ func WorldViewToJSON(world map[string]ElevatorStatus) map[string]ElevatorStateJS
 }
 
 type HRAInput struct {
-	HallRequests [][2]bool               `json:"hallRequests"`
+	HallRequests [][2]bool                    `json:"hallRequests"`
 	States       map[string]ElevatorStateJSON `json:"states"`
 }
 
-
 func UpdateMyState(e *Elevator) {
-    WorldView[e.MyID] = ElevatorStatus{
-        Floor:       e.CurrentFloor,
-        Direction:   e.Dir,
-        State:       e.State,
-        CabRequests: e.CabOrderMatrix[:],
-    }
+	WorldView[e.MyID] = ElevatorStatus{
+		Floor:       e.CurrentFloor,
+		Direction:   e.Dir,
+		State:       e.State,
+		CabRequests: e.CabOrderMatrix[:],
+	}
 }

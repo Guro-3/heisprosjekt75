@@ -37,6 +37,19 @@ func DelegateOrders(receiverID string, ps *types.PeerState, e *types.Elevator, b
 
 }
 
+func toHAllAssignment(matrix [][]bool) types.HAllAssignment {
+	var out types.HAllAssignment
+	for f := 0; f < types.NumFloors; f++ {
+		for b := 0; b < types.NumHallButtons; b++ {
+			if f < len(matrix) && b < len(matrix[f]) {
+				out[f][b] = matrix[f][b]
+			}
+		}
+
+	}
+	return out
+}
+
 func MasterSchedueler(e *types.Elevator, ps *types.PeerState, doorStartTimerCh chan int) {
 	types.UpdateMyState(e)
 
@@ -64,42 +77,35 @@ func MasterSchedueler(e *types.Elevator, ps *types.PeerState, doorStartTimerCh c
 		log.Println("assignHallRequests error: ", err)
 		return
 	}
+	newAssignment := make(map[string]types.HAllAssignment)
 
 	for id, matrix := range assignment {
-		var orders []elevio.ButtonEvent
+		newAssignment[id] = toHAllAssignment(matrix)
+	}
+
+	for id, newMatrix := range newAssignment {
+		oldMatrix := types.CurrentAssignment[id]
 
 		for f := 0; f < types.NumFloors; f++ {
 			for b := 0; b < types.NumHallButtons; b++ {
+				wasAssigned := oldMatrix[f][b]
+				isAssigned := newMatrix[f][b]
 
-				if matrix[f][b] {
-					orders = append(orders, elevio.ButtonEvent{
+				if !wasAssigned && isAssigned {
+					btn := elevio.ButtonEvent{
 						Floor:  f,
 						Button: elevio.ButtonType(b),
-					})
+					}
+
+					if id == e.MyID {
+						ElevatorP.HandleAsignedOrder(e, btn.Floor, btn.Button, doorStartTimerCh, ps)
+
+					} else {
+						DelegateOrders(id, ps, e, btn, types.WorldView)
+					}
 				}
-			}
-		}
-
-		if id != e.MyID {
-			for _, order := range orders {
-				btn := elevio.ButtonEvent{
-					Floor:  order.Floor,
-					Button: order.Button,
-				}
-
-				DelegateOrders(id, ps, e, btn, types.WorldView)
-
-			}
-		}
-		if id == e.MyID {
-
-			for _, order := range orders {
-				btn := elevio.ButtonEvent{
-					Floor:  order.Floor,
-					Button: order.Button,
-				}
-				ElevatorP.HandleAsignedOrder(e, btn.Floor, btn.Button, doorStartTimerCh, ps)
 			}
 		}
 	}
+	types.CurrentAssignment = newAssignment
 }
