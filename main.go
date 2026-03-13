@@ -98,7 +98,12 @@ func main() {
 			}
 
 			if len(p.Lost) > 0 && ps.Role == types.RolePrimary {
+				for _, lostID := range p.Lost {
+				delete(types.WorldView, lostID)
+				delete(types.CurrentAssignment, lostID)
+				}
 				schedueler.MasterSchedueler(e, ps, doorStartTimerCh)
+				
 			}
 
 		case PrimaryIdIp := <-UDPHeartbeatRx:

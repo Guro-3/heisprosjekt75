@@ -25,9 +25,12 @@ func ButtonTransmitLogic(ps *types.PeerState, e *types.Elevator, btn elevio.Butt
 		tcp.SendTCP(ps.PrimaryID, buttonMessage, ps)
 
 	} else {
-		types.FullOrderMatrix[btn.Floor][btn.Button] = true
-		SendSnapshot(ps, e, types.FullOrderMatrix)
-
+		
+		
+		if !types.FullOrderMatrix[btn.Floor][btn.Button] {
+			types.FullOrderMatrix[btn.Floor][btn.Button] = true
+			SendSnapshot(ps, e, types.FullOrderMatrix)
+		}
 	}
 }
 

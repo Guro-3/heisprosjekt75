@@ -65,10 +65,13 @@ type HRAInput struct {
 }
 
 func UpdateMyState(e *Elevator) {
+	cabs := make([]bool, len(e.CabOrderMatrix))
+	copy(cabs, e.CabOrderMatrix[:])
+
 	WorldView[e.MyID] = ElevatorStatus{
 		Floor:       e.CurrentFloor,
 		Direction:   e.Dir,
 		State:       e.State,
-		CabRequests: e.CabOrderMatrix[:],
+		CabRequests:cabs,
 	}
 }

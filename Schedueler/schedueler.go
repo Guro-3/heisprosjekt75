@@ -10,19 +10,21 @@ import (
 	"os/exec"
 )
 
-func assignHallRequests(input []byte) (map[string][][]bool, error) {
+func assignHallRequests(input []byte) (map[string][][types.NumHallButtons]bool, error) {
 
-	cmd := exec.Command("./cost_fns/hall_request_assigner/hall_request_assigner", "--input", string(input))
+	cmd := exec.Command("./cost_fns/hall_request_assigner/hall_request_assigner", "-i", string(input))
 
-	output, err := cmd.Output()
+	output, err := cmd.CombinedOutput()
 	if err != nil {
+		log.Println("hall_request_assigner output:", string(output))
 		return nil, err
 	}
 
-	var result map[string][][]bool
+	var result map[string][][types.NumHallButtons]bool
 
 	err = json.Unmarshal(output, &result)
 	if err != nil {
+		log.Println("hall_request_assigner raw output:", string(output))
 		return nil, err
 	}
 
@@ -30,30 +32,77 @@ func assignHallRequests(input []byte) (map[string][][]bool, error) {
 }
 
 func DelegateOrders(receiverID string, ps *types.PeerState, e *types.Elevator, btn elevio.ButtonEvent, world map[string]types.ElevatorStatus) {
+
 	messageData := tcp.HallOrderMessage{Floor: btn.Floor, Button: btn.Button}
-	buttonMessage := tcp.Message{Type: tcp.MsgHallOrder, NodeID: e.MyID, MessageData: messageData}
+
+	buttonMessage := tcp.Message{
+		Type:        tcp.MsgHallOrder,
+		NodeID:      e.MyID,
+		MessageData: messageData,
+	}
 
 	tcp.SendTCP(receiverID, buttonMessage, ps)
-
 }
 
-func toHAllAssignment(matrix [][]bool) types.HAllAssignment {
+func toHAllAssignment(matrix [][2]bool) types.HAllAssignment {
+
 	var out types.HAllAssignment
+
 	for f := 0; f < types.NumFloors; f++ {
 		for b := 0; b < types.NumHallButtons; b++ {
-			if f < len(matrix) && b < len(matrix[f]) {
+			if f < len(matrix) {
 				out[f][b] = matrix[f][b]
 			}
 		}
-
 	}
+
 	return out
 }
 
+func chooseOwner(floor int,button int, proposedAssignment map[string]types.HAllAssignment,finalAssignment map[string]types.HAllAssignment) string {
+
+	owner := ""
+
+	for id, matrix := range types.CurrentAssignment {
+	 _, alive := types.WorldView[id]; 
+	 if alive && matrix[floor][button] {
+			owner = id
+			break
+		}
+	}
+
+	
+	if owner == "" {
+		for id, matrix := range proposedAssignment {
+			if matrix[f][b] {
+				owner = id
+				break
+			}
+		}
+	}
+
+	//et forsøk på å ikke gi både UP og DOWN til samme heis hvis mulig
+	other := 1 - button
+
+	if owner != "" && finalAssignment[owner][floor][other] {
+
+		for ID := range types.WorldView {
+			if ID != owner {
+				owner = ID
+				break
+			}
+		}
+	}
+
+	return owner
+}
+
 func MasterSchedueler(e *types.Elevator, ps *types.PeerState, doorStartTimerCh chan int) {
+
 	types.UpdateMyState(e)
 
 	hallRequests := make([][2]bool, types.NumFloors)
+
 	for f := 0; f < types.NumFloors; f++ {
 		hallRequests[f] = [2]bool{
 			types.FullOrderMatrix[f][0],
@@ -68,38 +117,63 @@ func MasterSchedueler(e *types.Elevator, ps *types.PeerState, doorStartTimerCh c
 
 	jsonBytes, err := json.Marshal(input)
 	if err != nil {
-		log.Println("JSON Marshal error in MasterSchedueler: ", err)
+		log.Println("JSON Marshal error in MasterSchedueler:", err)
 		return
 	}
 
-	assignment, err := assignHallRequests(jsonBytes)
+	proposal, err := assignHallRequests(jsonBytes)
 	if err != nil {
-		log.Println("assignHallRequests error: ", err)
+		log.Println("assignHallRequests error:", err)
 		return
 	}
-	newAssignment := make(map[string]types.HAllAssignment)
 
-	for id, matrix := range assignment {
-		newAssignment[id] = toHAllAssignment(matrix)
+	proposedAssignment := make(map[string]types.HAllAssignment)
+
+	for id, matrix := range proposal {
+		proposedAssignment[id] = toHAllAssignment(matrix)
 	}
 
-	for id, newMatrix := range newAssignment {
+	finalAssignment := make(map[string]types.HAllAssignment)
+
+	for id := range types.WorldView {
+		finalAssignment[id] = types.HAllAssignment{}
+	}
+
+	for f := 0; f < types.NumFloors; f++ {
+		for b := 0; b < types.NumHallButtons; b++ {
+
+			if !types.FullOrderMatrix[f][b] {
+				continue
+			}
+
+			owner := chooseOwner(f, b, proposedAssignment, finalAssignment)
+
+			if owner != "" {
+				m := finalAssignment[owner]
+				m[f][b] = true
+				finalAssignment[owner] = m
+			}
+		}
+	}
+
+	for id, newMatrix := range finalAssignment {
+
 		oldMatrix := types.CurrentAssignment[id]
 
 		for f := 0; f < types.NumFloors; f++ {
 			for b := 0; b < types.NumHallButtons; b++ {
-				wasAssigned := oldMatrix[f][b]
-				isAssigned := newMatrix[f][b]
 
-				if !wasAssigned && isAssigned {
+				if !oldMatrix[f][b] && newMatrix[f][b] {
+
 					btn := elevio.ButtonEvent{
 						Floor:  f,
 						Button: elevio.ButtonType(b),
 					}
 
-					if id == e.MyID {
-						ElevatorP.HandleAsignedOrder(e, btn.Floor, btn.Button, doorStartTimerCh, ps)
+					log.Printf("Assign -> %s floor:%d button:%d", id, f, b)
 
+					if id == e.MyID {
+						ElevatorP.HandleAsignedOrder(e, f, elevio.ButtonType(b), doorStartTimerCh, ps)
 					} else {
 						DelegateOrders(id, ps, e, btn, types.WorldView)
 					}
@@ -107,5 +181,6 @@ func MasterSchedueler(e *types.Elevator, ps *types.PeerState, doorStartTimerCh c
 			}
 		}
 	}
-	types.CurrentAssignment = newAssignment
+
+	types.CurrentAssignment = finalAssignment
 }
