@@ -131,7 +131,7 @@ func clearAtCurrentFloor(e *types.Elevator, prevDir elevio.MotorDirection, ps *t
 	e.CabOrderMatrix[e.CurrentFloor] = false
 	TurnOffCabLight(e.CurrentFloor)
 
-	var btnType elevio.ButtonType
+	var btnTypeCleared []elevio.ButtonEvent
 
 	switch prevDir {
 	case elevio.MD_Up:
@@ -139,14 +139,14 @@ func clearAtCurrentFloor(e *types.Elevator, prevDir elevio.MotorDirection, ps *t
 		if e.Mode == types.SingleElevator {
 			TurnOffHallLight(elevio.BT_HallUp, e.CurrentFloor)
 		}
-		btnType = elevio.BT_HallUp
+		btnTypeCleared = append(btnTypeCleared, elevio.ButtonEvent{Floor: e.CurrentFloor, Button: elevio.BT_HallUp})
 
 		if !orderAbove(e) {
 			e.HallOrderMatrix[e.CurrentFloor][elevio.BT_HallDown] = false
 			if e.Mode == types.SingleElevator {
 				TurnOffHallLight(elevio.BT_HallDown, e.CurrentFloor)
 			}
-			btnType = elevio.BT_HallDown
+			btnTypeCleared = append(btnTypeCleared, elevio.ButtonEvent{Floor: e.CurrentFloor, Button: elevio.BT_HallDown})
 		}
 	case elevio.MD_Down:
 
@@ -154,35 +154,49 @@ func clearAtCurrentFloor(e *types.Elevator, prevDir elevio.MotorDirection, ps *t
 		if e.Mode == types.SingleElevator {
 			TurnOffHallLight(elevio.BT_HallDown, e.CurrentFloor)
 		}
-		btnType = elevio.BT_HallDown
+		btnTypeCleared = append(btnTypeCleared, elevio.ButtonEvent{Floor: e.CurrentFloor, Button: elevio.BT_HallDown})
 
 		if !orderBelow(e) {
 			e.HallOrderMatrix[e.CurrentFloor][elevio.BT_HallUp] = false
 			if e.Mode == types.SingleElevator {
 				TurnOffHallLight(elevio.BT_HallUp, e.CurrentFloor)
 			}
-			btnType = elevio.BT_HallUp
+			btnTypeCleared = append(btnTypeCleared, elevio.ButtonEvent{Floor: e.CurrentFloor, Button: elevio.BT_HallUp})
 		}
-	}
-	btn := elevio.ButtonEvent{
-		Floor:  e.CurrentFloor,
-		Button: btnType,
+	case elevio.MD_Stop:
+
+		if e.HallOrderMatrix[e.CurrentFloor][elevio.BT_HallDown] == true {
+			e.HallOrderMatrix[e.CurrentFloor][elevio.BT_HallDown] = false
+			if e.Mode == types.SingleElevator {
+				TurnOffHallLight(elevio.BT_HallDown, e.CurrentFloor)
+			}
+			btnTypeCleared = append(btnTypeCleared, elevio.ButtonEvent{Floor: e.CurrentFloor, Button: elevio.BT_HallDown})
+
+		} else {
+			e.HallOrderMatrix[e.CurrentFloor][elevio.BT_HallUp] = false
+			if e.Mode == types.SingleElevator {
+				TurnOffHallLight(elevio.BT_HallUp, e.CurrentFloor)
+			}
+			btnTypeCleared = append(btnTypeCleared, elevio.ButtonEvent{Floor: e.CurrentFloor, Button: elevio.BT_HallUp})
+		}
+
 	}
 
 	if e.Mode == types.PrimaryBackup {
-		messagecomplete.OrderCompleted(btn, e, ps)
+		for _, btn := range btnTypeCleared {
+			messagecomplete.OrderCompleted(btn, e, ps)
+		}
 	}
 
 }
 
 func HandleAsignedOrder(e *types.Elevator, btnFloor int, btnButton elevio.ButtonType, doorStartTimerCh chan int, ps *types.PeerState) {
+	AddOrder(e, btnFloor, btnButton)
+
 	if shouldClearAtFloorImmediately(e, btnFloor, btnButton) {
 		onDoorOpen(doorStartTimerCh, e, ps)
-		btn := elevio.ButtonEvent{Floor: btnFloor, Button: btnButton}
-		messagecomplete.OrderCompleted(btn, e, ps)
 
 	} else {
-		AddOrder(e, btnFloor, btnButton)
 		StartAction(e)
 	}
 }

@@ -13,7 +13,7 @@ func onDoorOpen(doorStartTimerCh chan int, e *types.Elevator, ps *types.PeerStat
 	elevio.SetMotorDirection(elevio.MD_Stop)
 	elevio.SetDoorOpenLamp(true)
 
-	clearAtCurrentFloor(e, prevDir,ps)
+	clearAtCurrentFloor(e, prevDir, ps)
 	doorStartTimerCh <- types.TimeDoorOpenDuration
 }
 
@@ -37,20 +37,35 @@ func OnObstruction(obstructionBtnCh chan bool, e *types.Elevator, doorStartTimer
 			}
 		} else {
 			e.Obstructed = false
-			doorStartTimerCh <- types.TimeDoorOpenDuration
+			if e.State == types.DoorOpen {
+				doorStartTimerCh <- types.TimeDoorOpenDuration
+			}
 		}
 	}
 }
 
 func DoorTimeManager(e *types.Elevator, doorTimeoutCh chan int, doorStartTimerCh chan int) {
+	var timer *time.Timer
+	var timerChan <-chan time.Time
 	for {
 		select {
 		case timeDuration := <-doorStartTimerCh:
-			timer := time.NewTimer(time.Duration(timeDuration) * time.Second)
-			select {
-			case <-timer.C:
-				doorTimeoutCh <- timeDuration
+			if timer != nil {
+				if !timer.Stop() {
+					select {
+					case <-timer.C:
+					default:
+					}
+				}
 			}
+			timer := time.NewTimer(time.Duration(timeDuration) * time.Second)
+			timerChan = timer.C
+		case <-timerChan:
+			timerChan = nil
+			if !e.Obstructed {
+				doorTimeoutCh <- types.TimeDoorOpenDuration
+			}
+
 		}
 	}
 }
