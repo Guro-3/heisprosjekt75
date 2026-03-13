@@ -3,7 +3,6 @@ package tcp
 import (
 	"bufio"
 	"encoding/json"
-
 	"heisprosjekt75/types"
 	"log"
 	"net"
@@ -18,7 +17,7 @@ func readLoop(conn net.Conn, incomingTCP chan Message) {
 	for {
 		line, err := reader.ReadString('\n') //hvor langt skal en string være? dette må skrives inn i parantesen
 		if err != nil {
-			log.Println("Message reading error: %s\n", err)
+			log.Println("Message reading error in read loop: ", err)
 			return
 		}
 
@@ -26,7 +25,7 @@ func readLoop(conn net.Conn, incomingTCP chan Message) {
 		var msg Message
 		err = json.Unmarshal([]byte(line), &msg)
 		if err != nil {
-			log.Println("json decode error: %v\n", err)
+			log.Println("json decode error in read loop: ", err)
 			continue
 		}
 		incomingTCP <- msg
@@ -35,7 +34,6 @@ func readLoop(conn net.Conn, incomingTCP chan Message) {
 
 func StartPrimaryTCP(ps *types.PeerState, port string, incomingTCP chan Message, e *types.Elevator) {
 
-	log.Println("starting primary")
 	listener, err := net.Listen("tcp", ":"+port)
 	if err != nil {
 		log.Println("Error with listning object")
@@ -44,7 +42,7 @@ func StartPrimaryTCP(ps *types.PeerState, port string, incomingTCP chan Message,
 		for {
 			conn, err := listener.Accept()
 			if err != nil {
-				log.Println("Error with listning object")
+				log.Println("Error with listning conn")
 				continue
 			}
 			go handleNewNode(conn, incomingTCP, e)
@@ -53,12 +51,11 @@ func StartPrimaryTCP(ps *types.PeerState, port string, incomingTCP chan Message,
 }
 
 func handleNewNode(conn net.Conn, incomingTCP chan Message, e *types.Elevator) {
-	log.Println("går inn i go handle")
 	reader := bufio.NewReader(conn)
 
 	line, err := reader.ReadString('\n')
 	if err != nil {
-		log.Printf("Message reading error: %v\n", err)
+		log.Println("Message reading error in handleNewNode: ", err)
 		_ = conn.Close()
 		return
 	}
@@ -68,13 +65,13 @@ func handleNewNode(conn net.Conn, incomingTCP chan Message, e *types.Elevator) {
 	var msg Message
 	err = json.Unmarshal([]byte(line), &msg)
 	if err != nil {
-		log.Printf("json decode error: %v\n", err)
+		log.Println("json decode error in handleNewNode: ", err)
 		conn.Close()
 		return
 	}
 
 	if msg.Type != Msghello {
-		log.Printf("expected Msghello, got %v\n", msg.Type)
+		log.Println("expected Msghello, got ", msg.Type)
 		conn.Close()
 		return
 	}
@@ -82,9 +79,6 @@ func handleNewNode(conn net.Conn, incomingTCP chan Message, e *types.Elevator) {
 	// NB: nodeConnMap må eksistere som global map i pakken deres
 	msgNodeID := msg.NodeID
 	nodeConnMap[msgNodeID] = conn
-
-	log.Printf("conn to node %v\n:", nodeConnMap[msgNodeID])
-	log.Printf("Node connected to Primary %s\n:", msgNodeID)
 
 	writer := bufio.NewWriter(conn)
 
@@ -98,7 +92,7 @@ func handleNewNode(conn net.Conn, incomingTCP chan Message, e *types.Elevator) {
 
 	jsonMsg, err := json.Marshal(welcome)
 	if err != nil {
-		log.Println("json marshal error:", err)
+		log.Println("json marshal error in handleNewNode:", err)
 		return
 	}
 
@@ -111,8 +105,6 @@ func handleNewNode(conn net.Conn, incomingTCP chan Message, e *types.Elevator) {
 func ConnectToPrimary(ps *types.PeerState, port string, e *types.Elevator, incomingTCP chan Message) {
 
 	for {
-		log.Printf("DEBUG ConnectToPrimary: PrimaryID=%q PrimaryIP=%q port=%q", ps.PrimaryID, ps.PrimaryIP, port)
-
 		if ps.PrimaryIP == "" {
 			time.Sleep(100 * time.Millisecond)
 			continue
@@ -139,14 +131,12 @@ func ConnectToPrimary(ps *types.PeerState, port string, e *types.Elevator, incom
 
 		jsonMsg, err := json.Marshal(hello)
 		if err != nil {
-			log.Println("json marshal error:", err)
+			log.Println("json marshal error in ConnectToPrimary:", err)
 			return
 		}
 
 		writer.WriteString(string(jsonMsg) + "\n")
 		writer.Flush()
-
-		log.Println("Connected to primary")
 
 		go readLoop(conn, incomingTCP)
 		break
@@ -163,20 +153,18 @@ func SendTCP(recieverID string, message Message, ps *types.PeerState) {
 
 	if ps.Role == types.RolePrimary {
 		conn, excist := nodeConnMap[recieverID]
-		log.Printf("Node connected to Primary recieverID: %s\n:", recieverID)
-		log.Printf("conn to node %v\n:", nodeConnMap[recieverID])
 
 		if !excist {
-			log.Printf("No nodes in nodeConnMap %s\n", recieverID)
+			log.Println("No nodes in nodeConnMap ", recieverID)
 			return
 		} else if conn == nil {
-			log.Printf("No receiver in conn%s\n", recieverID)
+			log.Println("No receiver in conn ", recieverID)
 			return
 		}
 		connNode = conn
 	} else {
 		if ps.PrimaryConn == nil {
-			log.Printf("PrimaryConn is nil, cannot send\n")
+			log.Println("PrimaryConn is nil, cannot send")
 			return
 		}
 		connNode = ps.PrimaryConn
@@ -223,3 +211,4 @@ func StartHeartbeatSender(ps *types.PeerState, heartbeatCh <-chan Message) {
 		}
 	}()
 }
+

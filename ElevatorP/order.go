@@ -3,7 +3,6 @@ package ElevatorP
 import (
 	"heisprosjekt75/Driver-go/elevio"
 	messagecomplete "heisprosjekt75/Messages/MessageComplete"
-	sendmessages "heisprosjekt75/Messages/SendMessages"
 	"heisprosjekt75/types"
 )
 
@@ -14,10 +13,14 @@ func AddOrder(e *types.Elevator, btnFloor int, btn elevio.ButtonType) {
 		SetCabLight(btnFloor)
 	case elevio.BT_HallUp:
 		e.HallOrderMatrix[btnFloor][elevio.BT_HallUp] = true
-		SetHallLight(elevio.BT_HallUp, btnFloor)
+		if e.Mode == types.SingleElevator {
+			SetHallLight(elevio.BT_HallUp, btnFloor)
+		}
 	case elevio.BT_HallDown:
 		e.HallOrderMatrix[btnFloor][elevio.BT_HallDown] = true
-		SetHallLight(elevio.BT_HallDown, btnFloor)
+		if e.Mode == types.SingleElevator {
+			SetHallLight(elevio.BT_HallDown, btnFloor)
+		}
 	}
 }
 
@@ -133,23 +136,31 @@ func clearAtCurrentFloor(e *types.Elevator, prevDir elevio.MotorDirection, ps *t
 	switch prevDir {
 	case elevio.MD_Up:
 		e.HallOrderMatrix[e.CurrentFloor][elevio.BT_HallUp] = false
-		TurnOffHallLight(elevio.BT_HallUp, e.CurrentFloor)
+		if e.Mode == types.SingleElevator {
+			TurnOffHallLight(elevio.BT_HallUp, e.CurrentFloor)
+		}
 		btnType = elevio.BT_HallUp
 
 		if !orderAbove(e) {
 			e.HallOrderMatrix[e.CurrentFloor][elevio.BT_HallDown] = false
-			TurnOffHallLight(elevio.BT_HallDown, e.CurrentFloor)
+			if e.Mode == types.SingleElevator {
+				TurnOffHallLight(elevio.BT_HallDown, e.CurrentFloor)
+			}
 			btnType = elevio.BT_HallDown
 		}
 	case elevio.MD_Down:
 
 		e.HallOrderMatrix[e.CurrentFloor][elevio.BT_HallDown] = false
-		TurnOffHallLight(elevio.BT_HallDown, e.CurrentFloor)
+		if e.Mode == types.SingleElevator {
+			TurnOffHallLight(elevio.BT_HallDown, e.CurrentFloor)
+		}
 		btnType = elevio.BT_HallDown
 
 		if !orderBelow(e) {
 			e.HallOrderMatrix[e.CurrentFloor][elevio.BT_HallUp] = false
-			TurnOffHallLight(elevio.BT_HallUp, e.CurrentFloor)
+			if e.Mode == types.SingleElevator {
+				TurnOffHallLight(elevio.BT_HallUp, e.CurrentFloor)
+			}
 			btnType = elevio.BT_HallUp
 		}
 	}
@@ -160,7 +171,6 @@ func clearAtCurrentFloor(e *types.Elevator, prevDir elevio.MotorDirection, ps *t
 
 	if e.Mode == types.PrimaryBackup {
 		messagecomplete.OrderCompleted(btn, e, ps)
-		sendmessages.SendHallLightOff(ps, e, btn, types.WorldView)
 	}
 
 }
@@ -168,9 +178,8 @@ func clearAtCurrentFloor(e *types.Elevator, prevDir elevio.MotorDirection, ps *t
 func HandleAsignedOrder(e *types.Elevator, btnFloor int, btnButton elevio.ButtonType, doorStartTimerCh chan int, ps *types.PeerState) {
 	if shouldClearAtFloorImmediately(e, btnFloor, btnButton) {
 		onDoorOpen(doorStartTimerCh, e, ps)
-		TurnOffHallLight(btnButton, btnFloor)
-		//btn := elevio.ButtonEvent{Floor: btnFloor, Button: btnButton}
-		//sendmessages.SendHallLightOff(ps, e, btn, types.WorldView)
+		btn := elevio.ButtonEvent{Floor: btnFloor, Button: btnButton}
+		messagecomplete.OrderCompleted(btn, e, ps)
 
 	} else {
 		AddOrder(e, btnFloor, btnButton)

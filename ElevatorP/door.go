@@ -2,11 +2,11 @@ package ElevatorP
 
 import (
 	"heisprosjekt75/Driver-go/elevio"
-	"time"
 	"heisprosjekt75/types"
+	"time"
 )
 
-func onDoorOpen(doorStartTimerCh chan int, e *types.Elevator,ps *types.PeerState) {
+func onDoorOpen(doorStartTimerCh chan int, e *types.Elevator, ps *types.PeerState) {
 	prevDir := e.Dir
 	e.State = types.DoorOpen
 
@@ -35,7 +35,7 @@ func OnObstruction(obstructionBtnCh chan bool, e *types.Elevator, doorStartTimer
 				elevio.SetMotorDirection(elevio.MD_Stop)
 				elevio.SetDoorOpenLamp(true)
 			}
-		} else {			
+		} else {
 			e.Obstructed = false
 			doorStartTimerCh <- types.TimeDoorOpenDuration
 		}

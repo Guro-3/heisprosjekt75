@@ -1,7 +1,6 @@
 package sendmessages
 
 import (
-	"fmt"
 	"heisprosjekt75/Driver-go/elevio"
 	"heisprosjekt75/Network-go/network/tcp"
 	"heisprosjekt75/types"
@@ -24,7 +23,7 @@ func ButtonTransmitLogic(ps *types.PeerState, e *types.Elevator, btn elevio.Butt
 	buttonMessage := tcp.Message{Type: tcp.MsgHallOrder, NodeID: e.MyID, MessageData: messageData}
 	if ps.Role != types.RolePrimary {
 		tcp.SendTCP(ps.PrimaryID, buttonMessage, ps)
-		fmt.Println("ankommet buttontransmitt logic som ikk master")
+
 	} else {
 		types.FullOrderMatrix[btn.Floor][btn.Button] = true
 		SendSnapshot(ps, e, types.FullOrderMatrix)
@@ -45,10 +44,9 @@ func SendHallLightOn(ps *types.PeerState, e *types.Elevator, btn elevio.ButtonEv
 func SendHallLightOff(ps *types.PeerState, e *types.Elevator, btn elevio.ButtonEvent, world map[string]types.ElevatorStatus) {
 	messageData := tcp.HallLightsOffMessage{Floor: btn.Floor, Button: btn.Button}
 	buttonMessage := tcp.Message{Type: tcp.MsgTurnOffHallLights, NodeID: e.MyID, MessageData: messageData}
-	fmt.Printf("Beveger sig inn til lys auf\n")
+
 	for id := range world {
 		if id != e.MyID {
-			fmt.Printf("Hvorfor skrur du ikke av alle lys id: %s\n", id)
 			tcp.SendTCP(id, buttonMessage, ps)
 		}
 	}

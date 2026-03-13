@@ -3,21 +3,18 @@ package ElevatorP
 import (
 	"heisprosjekt75/Driver-go/elevio"
 	"heisprosjekt75/types"
-	"fmt"
 )
 
 
 
 func ButtonPressedServiceOrder(e *types.Elevator, btnFloor int, btnType elevio.ButtonType, doorStartTimerCh chan int, ps *types.PeerState) {
-	fmt.Print("In func buttonPressedServiceOrder: \n")
 	
-
 	switch e.State {
 
 	case types.DoorOpen:
 		if shouldClearAtFloorImmediately(e, btnFloor, btnType) {
-			onDoorOpen(doorStartTimerCh, e, ps)
 			TurnOffHallLight(btnType, btnFloor)
+			onDoorOpen(doorStartTimerCh, e, ps)
 
 		} else {
 			AddOrder(e, btnFloor, btnType)
@@ -30,8 +27,8 @@ func ButtonPressedServiceOrder(e *types.Elevator, btnFloor int, btnType elevio.B
 	case types.Idle:
 
 		if shouldClearAtFloorImmediately(e, btnFloor, btnType) {
-			onDoorOpen(doorStartTimerCh, e, ps)
 			TurnOffHallLight(btnType, btnFloor)
+			onDoorOpen(doorStartTimerCh, e, ps)
 			return
 		}
 

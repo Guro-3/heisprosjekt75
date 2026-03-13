@@ -1,7 +1,7 @@
 package RoleManager
 
 import (
-	"fmt"
+	"log"
 	"heisprosjekt75/Network-go/network/peers"
 	"heisprosjekt75/types"
 )
@@ -20,18 +20,16 @@ func RoleElection(peers peers.PeerUpdate, e *types.Elevator, ps *types.PeerState
 	if len(peers.Peers) >= 2 {
 		ps.BackupID = peers.Peers[1]
 	}
-	fmt.Printf("DEBUG: MyID=%q PrimaryID=%q BackupID=%q\n",
-		e.MyID, ps.PrimaryID, ps.BackupID)
 
 	switch e.MyID {
 	case ps.PrimaryID:
 		ps.Role = types.RolePrimary
-		fmt.Print("my role is Primary\n")
+		log.Println("my role is Primary")
 	case ps.BackupID:
 		ps.Role = types.RoleBackup
-		fmt.Print("my role is backup\n")
+		log.Println("my role is backup")
 	default:
 		ps.Role = types.RoleNode
-		fmt.Print("my role is none\n")
+		log.Println("my role is none")
 	}
 }

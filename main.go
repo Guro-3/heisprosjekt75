@@ -19,9 +19,8 @@ import (
 	"time"
 )
 
-// NB!! Hvis en funksjon ikke funker i main betyr det mest sannsynlig at den er privat, for å dele funkjsoner mellom pakker må forbokstaven være stor
 func main() {
-	//Initialisering av heiser
+
 	var elevAddr string
 	var id string
 	const (
@@ -30,24 +29,17 @@ func main() {
 		TCPPort      = "3000"
 	)
 
-	//flagene var for å kunne kalle ulike elvator servers i terminalen
 	flag.StringVar(&id, "id", "", "node id (A/B/C)")
 	flag.StringVar(&elevAddr, "elev", "127.0.0.1:15657", "elevator server addr")
 	flag.Parse()
 
 	elevio.Init(elevAddr, 4)
 	ps := &types.PeerState{}
-	//---------Initialiser nettverk----------------------------------------------------------------------------------------
+	//---------Initialize network----------------------------------------------------------------------------------------
 
-	// We make channels for sending and receiving our custom data types
-
-	// nettwork init finner noden sin egen id brodacaser herr her jeg og leser om det er andre folk på nettet ved bruk av reive og trancive
 	id, peerUpdateCh := network.NetworkInit()
-	fmt.Println("min id", id)
 
-	//---------------------------------------------------------------------------------------------------------------------
 	ip, _ := localip.LocalIP()
-	fmt.Printf("LOCAL IP: %q\n", ip)
 
 	e := ElevatorP.NewElevator(id, ip)
 
@@ -92,9 +84,9 @@ func main() {
 			ElevatorP.OnDoortimeout(doorStartTimerCh, e)
 		case p := <-peerUpdateCh:
 			fmt.Printf("Peer update:\n")
-			fmt.Printf("  Peers:    %q\n", p.Peers)
-			fmt.Printf("  New:      %q\n", p.New)
-			fmt.Printf("  Lost:     %q\n", p.Lost)
+			fmt.Printf("  Peers:    %s\n", p.Peers)
+			fmt.Printf("  New:      %s\n", p.New)
+			fmt.Printf("  Lost:     %s\n", p.Lost)
 			RoleManager.RoleElection(p, e, ps)
 			if ps.PrevRole != ps.Role {
 				rolechanges.RolesSwitched(ps, TCPPort, TCPRx, e)
@@ -106,32 +98,17 @@ func main() {
 			}
 
 			if len(p.Lost) > 0 && ps.Role == types.RolePrimary {
-				fmt.Printf("fulorder matrix:%v\n", types.FullOrderMatrix)
 				schedueler.MasterSchedueler(e, ps, doorStartTimerCh)
-				fmt.Printf("Primary lost, redeligating orders \n")
 			}
 
-			// TEST: hvis jeg er primary og har backupID
-
 		case PrimaryIdIp := <-UDPHeartbeatRx:
-			//fmt.Printf("  PrimaryID:    %q\n", PrimaryIdIp.PrimaryID)
-			//fmt.Printf("  PrimaryIP:    %q\n", PrimaryIdIp.PrimaryAddrTCP)
 
 			ps.PrimaryID = PrimaryIdIp.PrimaryID
 			ps.PrimaryIP = PrimaryIdIp.PrimaryAddrTCP
-			//btn := elevio.ButtonEvent{Floor: 2, Button: elevio.BT_HallDown}
-			//schedueler.DelegateOrders(ps.BackupID, ps, e, btn)
 
 		case message := <-TCPRx:
-
 			messagelogic.OnMessageReceive(message, ps, e, doorStartTimerCh)
-
 		}
-		// til senere.....
-
-		//trenger vel melding inn melding ut kanal?
-		// og en assigned order, stateheartbeat kanal?
-		// go routine for recive and send
 
 	}
 }

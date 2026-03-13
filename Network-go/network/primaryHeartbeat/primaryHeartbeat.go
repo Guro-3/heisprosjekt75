@@ -1,7 +1,6 @@
 package PrimaryHeartbeat
 
 import (
-	//"fmt"
 	"heisprosjekt75/types"
 	"time"
 )

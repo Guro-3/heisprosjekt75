@@ -2,6 +2,7 @@ package ElevatorP
 
 import (
 	"heisprosjekt75/Driver-go/elevio"
+	sendmessages "heisprosjekt75/Messages/SendMessages"
 	"heisprosjekt75/types"
 )
 
@@ -31,5 +32,24 @@ func LightInit() {
 		}
 
 		TurnOffCabLight(f)
+	}
+}
+
+func SyncHallLight(ps *types.PeerState, e *types.Elevator, world map[string]types.ElevatorStatus){
+	for f:= 0; f < types.NumFloors; f++ {
+		for b:= 0; b < types.NumHallButtons; b++{
+			btn:= elevio.ButtonEvent{
+				Floor: f,
+				Button: elevio.ButtonType(b),
+			}
+
+			if types.FullOrderMatrix[f][b]{
+				SetHallLight(btn.Button, btn.Floor)
+				sendmessages.SendHallLightOn(ps, e, btn, world)
+			}else{
+				TurnOffHallLight(btn.Button, btn.Floor)
+				sendmessages.SendHallLightOff(ps, e, btn, world)
+			}
+		}
 	}
 }

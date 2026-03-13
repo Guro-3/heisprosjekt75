@@ -19,6 +19,5 @@ func NetworkInit() (id string, peerUpdateCh <-chan peers.PeerUpdate) {
 	go peers.Transmitter(id, peerTxEnable)
 	go peers.Receiver(id, ch)
 
-	fmt.Println("[NET] started peers with id:", id)
 	return id, ch
 }

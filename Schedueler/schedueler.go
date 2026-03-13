@@ -2,12 +2,11 @@ package schedueler
 
 import (
 	"encoding/json"
-	"fmt"
 	"heisprosjekt75/Driver-go/elevio"
 	"heisprosjekt75/ElevatorP"
-	sendmessages "heisprosjekt75/Messages/SendMessages"
 	"heisprosjekt75/Network-go/network/tcp"
 	"heisprosjekt75/types"
+	"log"
 	"os/exec"
 )
 
@@ -33,10 +32,9 @@ func assignHallRequests(input []byte) (map[string][][]bool, error) {
 func DelegateOrders(receiverID string, ps *types.PeerState, e *types.Elevator, btn elevio.ButtonEvent, world map[string]types.ElevatorStatus) {
 	messageData := tcp.HallOrderMessage{Floor: btn.Floor, Button: btn.Button}
 	buttonMessage := tcp.Message{Type: tcp.MsgHallOrder, NodeID: e.MyID, MessageData: messageData}
-	fmt.Printf("Deligate orders\n")
+
 	tcp.SendTCP(receiverID, buttonMessage, ps)
-	sendmessages.SendHallLightOn(ps, e, btn, world)
-	ElevatorP.SetHallLight(btn.Button, btn.Floor)
+
 }
 
 func MasterSchedueler(e *types.Elevator, ps *types.PeerState, doorStartTimerCh chan int) {
@@ -49,7 +47,6 @@ func MasterSchedueler(e *types.Elevator, ps *types.PeerState, doorStartTimerCh c
 			types.FullOrderMatrix[f][1],
 		}
 	}
-	fmt.Printf("hallrquest: %v\n", hallRequests)
 
 	input := types.HRAInput{
 		HallRequests: hallRequests,
@@ -58,18 +55,17 @@ func MasterSchedueler(e *types.Elevator, ps *types.PeerState, doorStartTimerCh c
 
 	jsonBytes, err := json.Marshal(input)
 	if err != nil {
-		fmt.Printf("JSON Marshal error: %v\n", err)
+		log.Println("JSON Marshal error in MasterSchedueler: ", err)
 		return
 	}
 
 	assignment, err := assignHallRequests(jsonBytes)
 	if err != nil {
-		fmt.Printf("assignHallRequests error: %v\n", err)
+		log.Println("assignHallRequests error: ", err)
 		return
 	}
 
 	for id, matrix := range assignment {
-		fmt.Printf("reciever id: %s\n", id)
 		var orders []elevio.ButtonEvent
 
 		for f := 0; f < types.NumFloors; f++ {
@@ -84,7 +80,6 @@ func MasterSchedueler(e *types.Elevator, ps *types.PeerState, doorStartTimerCh c
 			}
 		}
 
-		fmt.Printf("order to node id %s\n", id)
 		if id != e.MyID {
 			for _, order := range orders {
 				btn := elevio.ButtonEvent{
@@ -97,14 +92,12 @@ func MasterSchedueler(e *types.Elevator, ps *types.PeerState, doorStartTimerCh c
 			}
 		}
 		if id == e.MyID {
-			fmt.Printf("Schedulere: this is my id: %s\n", id)
+
 			for _, order := range orders {
 				btn := elevio.ButtonEvent{
 					Floor:  order.Floor,
 					Button: order.Button,
 				}
-				sendmessages.SendHallLightOn(ps, e, btn, types.WorldView)
-				ElevatorP.SetHallLight(btn.Button, btn.Floor)
 				ElevatorP.HandleAsignedOrder(e, btn.Floor, btn.Button, doorStartTimerCh, ps)
 			}
 		}
