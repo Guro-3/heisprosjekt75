@@ -2,8 +2,10 @@ package messagelogic
 
 import (
 	"encoding/json"
+	"fmt"
+	"heisprosjekt75/Driver-go/elevio"
 	"heisprosjekt75/ElevatorP"
-	"heisprosjekt75/Messages/SendMessages"
+	sendmessages "heisprosjekt75/Messages/SendMessages"
 	"heisprosjekt75/Network-go/network/tcp"
 	schedueler "heisprosjekt75/Schedueler"
 	"heisprosjekt75/types"
@@ -25,7 +27,7 @@ func OnMessageReceive(msg tcp.Message, ps *types.PeerState, e *types.Elevator, d
 			sendmessages.SendSnapshot(ps, e, types.FullOrderMatrix)
 
 		default:
-
+			fmt.Printf("filkk ordre som role:%s\n", ps.Role)
 			ElevatorP.HandleAsignedOrder(e, order.Floor, order.Button, doorStartTimerCh, ps)
 
 		}
@@ -42,7 +44,8 @@ func OnMessageReceive(msg tcp.Message, ps *types.PeerState, e *types.Elevator, d
 		case types.RolePrimary:
 			log.Println("Master got completed order")
 			types.FullOrderMatrix[orderComplete.Floor][orderComplete.Button] = false
-			sendmessages.SendSnapshot(ps,e,types.FullOrderMatrix)
+			sendmessages.SendSnapshot(ps, e, types.FullOrderMatrix)
+
 		default:
 			log.Println("shall not happen msg complete order")
 		}
@@ -96,11 +99,28 @@ func OnMessageReceive(msg tcp.Message, ps *types.PeerState, e *types.Elevator, d
 			schedueler.MasterSchedueler(e, ps, doorStartTimerCh)
 		default:
 			log.Println("shall not happend MsgBackupHallOrderACK")
-
 		}
+
+	case tcp.MsgSetHallLights:
+		bytes, _ := json.Marshal(msg.MessageData)
+
+		var SetHallLightMsg tcp.HallLightsOnMessage
+		json.Unmarshal(bytes, &SetHallLightMsg)
+
+		log.Printf("Turn on Hall lights")
+		btn := elevio.ButtonEvent{Floor: SetHallLightMsg.Floor, Button: elevio.ButtonType(SetHallLightMsg.Button)}
+		if ps.Role != types.RolePrimary {
+			ElevatorP.SetHallLight(btn.Button, btn.Floor)
+		}
+
+	case tcp.MsgTurnOffHallLights:
+		bytes, _ := json.Marshal(msg.MessageData)
+
+		var TurnOffHallLightMsg tcp.HallLightsOffMessage
+		json.Unmarshal(bytes, &TurnOffHallLightMsg)
+
+		log.Printf("Turn off Hall lights")
+		btn := elevio.ButtonEvent{Floor: TurnOffHallLightMsg.Floor, Button: elevio.ButtonType(TurnOffHallLightMsg.Button)}
+		ElevatorP.TurnOffHallLight(btn.Button, btn.Floor)
 	}
 }
-
-
-
-

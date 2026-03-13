@@ -1,11 +1,11 @@
 package messagecomplete
 
-import(
+import (
+	"fmt"
 	"heisprosjekt75/Driver-go/elevio"
+	"heisprosjekt75/Messages/SendMessages"
 	"heisprosjekt75/Network-go/network/tcp"
 	"heisprosjekt75/types"
-	"heisprosjekt75/Messages/SendMessages"
-	"fmt"
 )
 
 func OrderCompleted(btn elevio.ButtonEvent,e *types.Elevator,ps *types.PeerState){
@@ -17,5 +17,6 @@ func OrderCompleted(btn elevio.ButtonEvent,e *types.Elevator,ps *types.PeerState
 		types.FullOrderMatrix[btn.Floor][btn.Button] = false
 		sendmessages.SendSnapshot(ps,e,types.FullOrderMatrix)
 		fmt.Printf("Master serviced its own order\n")
+		
 	}
 }

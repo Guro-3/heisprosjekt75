@@ -35,15 +35,21 @@ func ButtonTransmitLogic(ps *types.PeerState, e *types.Elevator, btn elevio.Butt
 func SendHallLightOn(ps *types.PeerState, e *types.Elevator, btn elevio.ButtonEvent, world map[string]types.ElevatorStatus) {
 	messageData := tcp.HallLightsOnMessage{Floor: btn.Floor, Button: btn.Button}
 	buttonMessage := tcp.Message{Type: tcp.MsgSetHallLights, NodeID: e.MyID, MessageData: messageData}
-	for id := range world {
-		tcp.SendTCP(id, buttonMessage, ps)
-	} //vi skjønner ikke helt om dette vil funke, kan vi se på det sammen på fredag?
+	for id:= range world {
+		if id != e.MyID {
+			tcp.SendTCP(id, buttonMessage, ps)
+		}
+	} 
 }
 
 func SendHallLightOff(ps *types.PeerState, e *types.Elevator, btn elevio.ButtonEvent, world map[string]types.ElevatorStatus) {
 	messageData := tcp.HallLightsOffMessage{Floor: btn.Floor, Button: btn.Button}
 	buttonMessage := tcp.Message{Type: tcp.MsgTurnOffHallLights, NodeID: e.MyID, MessageData: messageData}
+	fmt.Printf("Beveger sig inn til lys auf\n")
 	for id := range world {
-		tcp.SendTCP(id, buttonMessage, ps)
+		if id != e.MyID {
+			fmt.Printf("Hvorfor skrur du ikke av alle lys id: %s\n", id)
+			tcp.SendTCP(id, buttonMessage, ps)
+		}
 	}
 }
