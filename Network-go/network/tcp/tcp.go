@@ -3,6 +3,7 @@ package tcp
 import (
 	"bufio"
 	"encoding/json"
+	utilities "heisprosjekt75/Utilities"
 	"heisprosjekt75/types"
 	"log"
 	"net"
@@ -98,6 +99,27 @@ func handleNewNode(conn net.Conn, incomingTCP chan Message, e *types.Elevator) {
 
 	writer.WriteString(string(jsonMsg) + "\n")
 	writer.Flush()
+
+	///// kanskje gjøre til en funksjon
+	ip := utilities.GetIP(msgNodeID)
+
+	if cabOrders, ok := types.ActiveCabOrders[ip]; ok {
+
+		msg := Message{
+			Type:        MsgCabOrders,
+			NodeID:      e.MyID,
+			MessageData: cabOrders,
+		}
+
+		data, err := json.Marshal(msg)
+		if err != nil {
+			log.Println("cab order marshal error:", err)
+			return
+		}
+
+		writer.WriteString(string(data) + "\n")
+		writer.Flush()
+	}
 
 	go readLoop(conn, incomingTCP)
 }
@@ -211,4 +233,3 @@ func StartHeartbeatSender(ps *types.PeerState, heartbeatCh <-chan Message) {
 		}
 	}()
 }
-

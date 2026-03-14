@@ -15,7 +15,6 @@ import (
 	rolechanges "heisprosjekt75/RoleLogic/RoleChanges"
 	"heisprosjekt75/RoleLogic/RoleManager"
 	schedueler "heisprosjekt75/Schedueler"
-	utilities "heisprosjekt75/Utilities"
 	"heisprosjekt75/types"
 	"time"
 )
@@ -98,17 +97,6 @@ func main() {
 				}
 			}
 
-			if len(p.New) > 0 && ps.Role == types.RolePrimary {
-				for _, ID := range p.New {
-					ip = utilities.GetIP(string(ID))
-					value, ok := types.ActiveCabOrders[ip]
-					if ok {
-						sendmessages.SendCabOrdersToNode(ps, e, value, string(ID))
-					}
-				}
-				schedueler.MasterSchedueler(e, ps, doorStartTimerCh)
-
-			}
 
 			if len(p.Lost) > 0 && ps.Role == types.RolePrimary {
 				for _, lostID := range p.Lost {
