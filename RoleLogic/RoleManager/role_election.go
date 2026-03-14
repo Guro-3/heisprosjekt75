@@ -3,6 +3,7 @@ package RoleManager
 import (
 	"heisprosjekt75/Network-go/network/peers"
 	"heisprosjekt75/types"
+	"heisprosjekt75/ElevatorP"
 	"log"
 )
 
@@ -11,6 +12,7 @@ func RoleElection(peers peers.PeerUpdate, e *types.Elevator, ps *types.PeerState
 
 	if len(peers.Peers) == 1 {
 		ps.PrimaryID = e.MyID
+		ElevatorP.SingleElevatorOrderRedelegation(e)
 		e.Mode = types.SingleElevator
 		log.Println("Elevator mode: ", e.Mode)
 	} else {
