@@ -41,15 +41,16 @@ func OnMessageReceive(msg tcp.Message, ps *types.PeerState, e *types.Elevator, d
 		case types.RolePrimary:
 			types.ActiveCabOrders[order.NodeIP] = order.Cabs
 			types.ActiveCabOrders[e.ElevIP] = e.CabOrderMatrix
-			sendmessages.SendSnapshotCabs(ps,e,types.ActiveCabOrders)
+			sendmessages.SendSnapshotCabs(ps, e, types.ActiveCabOrders)
+			log.Println("Dette er i switch case RolePrimary messageCabOrder")
 		default:
 			for f := e.CurrentFloor + 1; f < types.NumFloors; f++ {
-				if order.Cabs[f]{
-					ElevatorP.AddOrder(e,f,elevio.BT_Cab)
+				if order.Cabs[f] {
+					ElevatorP.AddOrder(e, f, elevio.BT_Cab)
 				}
 			}
-			
-			
+			log.Println("Dette er i switch case Default messageCabOrder")
+
 		}
 
 	case tcp.MsgCompletedOrder:
@@ -63,10 +64,10 @@ func OnMessageReceive(msg tcp.Message, ps *types.PeerState, e *types.Elevator, d
 		switch ps.Role {
 		case types.RolePrimary:
 
-			if !types.FullOrderMatrix[orderComplete.Floor][orderComplete.Button] { 
-				log.Printf("Ignoring duplicate completion for floor:%d button:%d", 
-					orderComplete.Floor, orderComplete.Button) 
-				return 
+			if !types.FullOrderMatrix[orderComplete.Floor][orderComplete.Button] {
+				log.Printf("Ignoring duplicate completion for floor:%d button:%d",
+					orderComplete.Floor, orderComplete.Button)
+				return
 			}
 			types.FullOrderMatrix[orderComplete.Floor][orderComplete.Button] = false
 
@@ -77,7 +78,7 @@ func OnMessageReceive(msg tcp.Message, ps *types.PeerState, e *types.Elevator, d
 
 			log.Printf("FullOrderMatrix CLEAR -> floor:%d button:%d", // ENDRET
 				orderComplete.Floor, orderComplete.Button) // ENDRET
-			
+
 			sendmessages.SendSnapshotHall(ps, e, types.FullOrderMatrix)
 
 		default:
@@ -124,7 +125,7 @@ func OnMessageReceive(msg tcp.Message, ps *types.PeerState, e *types.Elevator, d
 		switch ps.Role {
 		case types.RoleBackup:
 			types.ActiveCabOrders = snapshot.Cabs
-			sendmessages.BackupHallOrderACK(ps, e)
+			log.Println("Dette er i switch case RoleBackup msgSnapshotCabs")
 
 		default:
 			log.Println("Error: Wrong elevator got SnapshotHallOrdersMessage")

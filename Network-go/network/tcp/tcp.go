@@ -102,8 +102,10 @@ func handleNewNode(conn net.Conn, incomingTCP chan Message, e *types.Elevator) {
 
 	///// kanskje gjøre til en funksjon
 	ip := utilities.GetIP(msgNodeID)
+	cabOrders, ok := types.ActiveCabOrders[ip]; 
+	log.Println("IP som kommer inn: ", ip)
 
-	if cabOrders, ok := types.ActiveCabOrders[ip]; ok {
+	if  ok {
 
 		msg := Message{
 			Type:        MsgCabOrders,
