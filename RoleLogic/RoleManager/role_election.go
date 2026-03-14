@@ -7,12 +7,12 @@ import (
 	"log"
 )
 
-func RoleElection(peers peers.PeerUpdate, e *types.Elevator, ps *types.PeerState) {
+func RoleElection(peers peers.PeerUpdate, e *types.Elevator, ps *types.PeerState, doorStartTimerCh chan int) {
 	ps.PrevRole = ps.Role
 
 	if len(peers.Peers) == 1 {
 		ps.PrimaryID = e.MyID
-		ElevatorP.SingleElevatorOrderRedelegation(e)
+		ElevatorP.SingleElevatorOrderRedelegation(e, doorStartTimerCh)
 		e.Mode = types.SingleElevator
 		log.Println("Elevator mode: ", e.Mode)
 	} else {

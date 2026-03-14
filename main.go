@@ -87,7 +87,7 @@ func main() {
 			fmt.Printf("  Peers:    %s\n", p.Peers)
 			fmt.Printf("  New:      %s\n", p.New)
 			fmt.Printf("  Lost:     %s\n", p.Lost)
-			RoleManager.RoleElection(p, e, ps)
+			RoleManager.RoleElection(p, e, ps, doorStartTimerCh)
 			if ps.PrevRole != ps.Role {
 				rolechanges.RolesSwitched(ps, TCPPort, TCPRx, e)
 				ps.PrevRole = ps.Role

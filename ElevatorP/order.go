@@ -303,17 +303,16 @@ func HandleAsignedOrder(e *types.Elevator, btnFloor int, btnButton elevio.Button
 }
 
 
-func SingleElevatorOrderRedelegation(e *types.Elevator){
+func SingleElevatorOrderRedelegation(e *types.Elevator, doorStartTimerCh chan int){
+	log.Println("Vi skal nå sjekke gjennom ordrelista")
 	for f:= 0; f < types.NumFloors; f++ {
 		for b:= 0; b < types.NumHallButtons; b++{
-			btn:= elevio.ButtonEvent{
-				Floor: f,
-				Button: elevio.ButtonType(b),
-			}
-
 			if types.FullOrderMatrix[f][b]{
-				SetHallLight(btn.Button, btn.Floor)
 				AddOrder(e, f, elevio.ButtonType(b))
+				StartAction(e, doorStartTimerCh, &e.Ps)
+				log.Println("Det finnes ordre på etg: ", f)
+			}else{
+				log.Println("Det finnes ingen ordre i etg: ", f)
 			}
 		}
 	}
