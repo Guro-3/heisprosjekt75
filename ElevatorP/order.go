@@ -301,3 +301,20 @@ func HandleAsignedOrder(e *types.Elevator, btnFloor int, btnButton elevio.Button
 		StartAction(e , doorStartTimerCh, ps)
 	}
 }
+
+
+func SingleElevatorOrderRedelegation(e *types.Elevator){
+	for f:= 0; f < types.NumFloors; f++ {
+		for b:= 0; b < types.NumHallButtons; b++{
+			btn:= elevio.ButtonEvent{
+				Floor: f,
+				Button: elevio.ButtonType(b),
+			}
+
+			if types.FullOrderMatrix[f][b]{
+				SetHallLight(btn.Button, btn.Floor)
+				AddOrder(e, f, elevio.ButtonType(b))
+			}
+		}
+	}
+}

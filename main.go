@@ -74,6 +74,7 @@ func main() {
 		select {
 		case btn := <-reaciveBtnCh:
 			if e.Mode == types.SingleElevator || btn.Button == elevio.BT_Cab {
+				ElevatorP.SingleElevatorOrderRedelegation(e)
 				ElevatorP.ButtonPressedServiceOrder(e, btn.Floor, btn.Button, doorStartTimerCh, ps)
 			} else {
 				sendmessages.ButtonTransmitLogic(ps, e, btn)
