@@ -71,32 +71,41 @@ func chooseDirection(e *types.Elevator) (elevio.MotorDirection, types.ElevatorSt
 
 	case elevio.MD_Up:
 		if orderAbove(e) {
+			log.Println("chooseDir, MD_Up, OrderAbove()")
 			return elevio.MD_Up, types.Moving
 		}
 
 		if orderBelow(e) {
+			log.Println("chooseDir, MD_Up, OrderBelow()")
 			return elevio.MD_Down, types.Moving
 		}
+		log.Println("chooseDir, MD_Up, return MD_STOP")
 		return elevio.MD_Stop, types.Idle
 
 	case elevio.MD_Down:
 
 		if orderBelow(e) {
+			log.Println("chooseDir, MD_Down, OrderBelow()")
 			return elevio.MD_Down, types.Moving
 		}
 		if orderAbove(e) {
+			log.Println("chooseDir, MD_Down, OrderAbove()")
 			return elevio.MD_Up, types.Moving
 		}
+		log.Println("chooseDir, MD_Down, return MD_STOP")
 		return elevio.MD_Stop, types.Idle
 
 	case elevio.MD_Stop:
 
 		if orderAbove(e) {
+			log.Println("chooseDir, MD_Stop, OrderAbove()")
 			return elevio.MD_Up, types.Moving
 		}
 		if orderBelow(e) {
+			log.Println("chooseDir, MD_Stop, OrderBelow()")
 			return elevio.MD_Down, types.Moving
 		}
+		log.Println("chooseDir, MD_Stop, return MD_STOP")
 		return elevio.MD_Stop, types.Idle
 
 	default:
