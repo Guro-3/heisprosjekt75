@@ -30,7 +30,7 @@ func OrderCompleted(btn elevio.ButtonEvent,e *types.Elevator,ps *types.PeerState
 			types.CurrentAssignment[id] = matrix
 		}
 		log.Printf("FullOrderMatrix CLEAR -> floor:%d button:%d", btn.Floor, btn.Button)
-		sendmessages.SendSnapshot(ps,e,types.FullOrderMatrix)
+		sendmessages.SendSnapshotHall(ps,e,types.FullOrderMatrix)
 		
 	}
 }

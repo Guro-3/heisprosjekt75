@@ -12,12 +12,15 @@ type ElevatorStatus struct {
 }
 
 var FullOrderMatrix [NumFloors][NumHallButtons]bool
+type CabOrderMatrix [NumFloors]bool
 
 var WorldView = make(map[string]ElevatorStatus)
 
 type HAllAssignment [NumFloors][NumHallButtons]bool
 
 var CurrentAssignment = make(map[string]HAllAssignment)
+
+var ActiveCabOrders = make(map[string]CabOrderMatrix)
 
 type ElevatorStateJSON struct {
 	Behaviour   string `json:"behaviour"`

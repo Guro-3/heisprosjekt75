@@ -24,12 +24,32 @@ func OnMessageReceive(msg tcp.Message, ps *types.PeerState, e *types.Elevator, d
 
 			if !types.FullOrderMatrix[order.Floor][order.Button] {
 				types.FullOrderMatrix[order.Floor][order.Button] = true
-				sendmessages.SendSnapshot(ps, e, types.FullOrderMatrix)
+				sendmessages.SendSnapshotHall(ps, e, types.FullOrderMatrix)
 			}
 
 		default:
 			ElevatorP.HandleAsignedOrder(e, order.Floor, order.Button, doorStartTimerCh, ps)
 
+		}
+	case tcp.MsgCabOrders:
+		bytes, _ := json.Marshal(msg.MessageData)
+
+		var order tcp.CabOrderMessage
+		json.Unmarshal(bytes, &order)
+
+		switch ps.Role {
+		case types.RolePrimary:
+			types.ActiveCabOrders[order.NodeIP] = order.Cabs
+			types.ActiveCabOrders[e.ElevIP] = e.CabOrderMatrix
+			sendmessages.SendSnapshotCabs(ps,e,types.ActiveCabOrders)
+		default:
+			for f := e.CurrentFloor + 1; f < types.NumFloors; f++ {
+				if order.Cabs[f]{
+					ElevatorP.AddOrder(e,f,elevio.BT_Cab)
+				}
+			}
+			
+			
 		}
 
 	case tcp.MsgCompletedOrder:
@@ -58,7 +78,7 @@ func OnMessageReceive(msg tcp.Message, ps *types.PeerState, e *types.Elevator, d
 			log.Printf("FullOrderMatrix CLEAR -> floor:%d button:%d", // ENDRET
 				orderComplete.Floor, orderComplete.Button) // ENDRET
 			
-			sendmessages.SendSnapshot(ps, e, types.FullOrderMatrix)
+			sendmessages.SendSnapshotHall(ps, e, types.FullOrderMatrix)
 
 		default:
 			log.Println("Error: Wrong elevator got MsgCompletedOrder")
@@ -81,7 +101,7 @@ func OnMessageReceive(msg tcp.Message, ps *types.PeerState, e *types.Elevator, d
 			log.Println("Error: Wrong elevator got HeartbeatMessage")
 		}
 
-	case tcp.MsgSnapshot:
+	case tcp.MsgSnapshotHall:
 		bytes, _ := json.Marshal(msg.MessageData)
 
 		var snapshot tcp.SnapshotHallOrdersMessage
@@ -90,6 +110,20 @@ func OnMessageReceive(msg tcp.Message, ps *types.PeerState, e *types.Elevator, d
 		switch ps.Role {
 		case types.RoleBackup:
 			types.FullOrderMatrix = snapshot.Hall
+			sendmessages.BackupHallOrderACK(ps, e)
+
+		default:
+			log.Println("Error: Wrong elevator got SnapshotHallOrdersMessage")
+		}
+	case tcp.MsgSnapshotCabs:
+		bytes, _ := json.Marshal(msg.MessageData)
+
+		var snapshot tcp.SnapshotCabOrdersMessage
+		json.Unmarshal(bytes, &snapshot)
+
+		switch ps.Role {
+		case types.RoleBackup:
+			types.ActiveCabOrders = snapshot.Cabs
 			sendmessages.BackupHallOrderACK(ps, e)
 
 		default:

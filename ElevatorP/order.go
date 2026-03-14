@@ -3,6 +3,7 @@ package ElevatorP
 import (
 	"heisprosjekt75/Driver-go/elevio"
 	messagecomplete "heisprosjekt75/Messages/MessageComplete"
+	sendmessages "heisprosjekt75/Messages/SendMessages"
 	"heisprosjekt75/types"
 	"log"
 )
@@ -12,6 +13,9 @@ func AddOrder(e *types.Elevator, btnFloor int, btn elevio.ButtonType) {
 	case elevio.BT_Cab:
 		e.CabOrderMatrix[btnFloor] = true
 		SetCabLight(btnFloor)
+		if e.Mode == types.PrimaryBackup {
+			sendmessages.SendCabOrdersToPrimary(&e.Ps, e, e.CabOrderMatrix)
+		}
 	case elevio.BT_HallUp:
 		e.HallOrderMatrix[btnFloor][elevio.BT_HallUp] = true
 		if e.Mode == types.SingleElevator {
@@ -150,12 +154,7 @@ func chooseDirection(e *types.Elevator, doorStartTimerCh chan int,ps *types.Peer
 }
 
 func shouldStop(e *types.Elevator) bool {
-	/*if e.Mode == types.PrimaryBackup {
-		CheckStopCondition(e)
-		return cabOrdersHere(e) ||
-			e.HallOrderMatrix[e.CurrentFloor][elevio.BT_HallUp] ||
-			e.HallOrderMatrix[e.CurrentFloor][elevio.BT_HallDown]
-	}*/
+	
 	switch e.Dir {
 	case elevio.MD_Up:
 		CheckStopCondition(e)

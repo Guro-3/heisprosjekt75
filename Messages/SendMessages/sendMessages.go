@@ -6,10 +6,28 @@ import (
 	"heisprosjekt75/types"
 )
 
-func SendSnapshot(ps *types.PeerState, e *types.Elevator, hallOrderMAtrix [types.NumFloors][types.NumHallButtons]bool) {
+func SendSnapshotHall(ps *types.PeerState, e *types.Elevator, hallOrderMAtrix [types.NumFloors][types.NumHallButtons]bool) {
 	messageData := tcp.SnapshotHallOrdersMessage{Hall: hallOrderMAtrix}
-	buttonMessage := tcp.Message{Type: tcp.MsgSnapshot, NodeID: e.MyID, MessageData: messageData}
+	buttonMessage := tcp.Message{Type: tcp.MsgSnapshotHall, NodeID: e.MyID, MessageData: messageData}
 	tcp.SendTCP(ps.BackupID, buttonMessage, ps)
+}
+
+func SendSnapshotCabs(ps *types.PeerState, e *types.Elevator, CabOrderMatrix map[string]types.CabOrderMatrix) {
+	messageData := tcp.SnapshotCabOrdersMessage{Cabs: CabOrderMatrix}
+	buttonMessage := tcp.Message{Type: tcp.MsgSnapshotCabs, NodeID: e.MyID, MessageData: messageData}
+	tcp.SendTCP(ps.BackupID, buttonMessage, ps)
+}
+
+func SendCabOrdersToPrimary(ps *types.PeerState, e *types.Elevator, ActiveCabOrders [types.NumFloors]bool) {
+	messageData := tcp.CabOrderMessage{Cabs: ActiveCabOrders, NodeIP: e.ElevIP}
+	buttonMessage := tcp.Message{Type: tcp.MsgCabOrders, NodeID: e.MyID, MessageData: messageData}
+	tcp.SendTCP(ps.PrimaryID, buttonMessage, ps)
+}
+
+func SendCabOrdersToNode(ps *types.PeerState, e *types.Elevator, ActiveCabOrders [types.NumFloors]bool, receiverID string) {
+	messageData := tcp.CabOrderMessage{Cabs: ActiveCabOrders, NodeIP: e.ElevIP}
+	buttonMessage := tcp.Message{Type: tcp.MsgCabOrders, NodeID: e.MyID, MessageData: messageData}
+	tcp.SendTCP(receiverID, buttonMessage, ps)
 }
 
 func BackupHallOrderACK(ps *types.PeerState, e *types.Elevator) {
@@ -29,7 +47,7 @@ func ButtonTransmitLogic(ps *types.PeerState, e *types.Elevator, btn elevio.Butt
 		
 		if !types.FullOrderMatrix[btn.Floor][btn.Button] {
 			types.FullOrderMatrix[btn.Floor][btn.Button] = true
-			SendSnapshot(ps, e, types.FullOrderMatrix)
+			SendSnapshotHall(ps, e, types.FullOrderMatrix)
 		}
 	}
 }

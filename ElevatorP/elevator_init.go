@@ -20,5 +20,6 @@ func NewElevator(myID string, myIP string) *types.Elevator {
 	e.Ps.Role = types.RoleNone
 	e.Ps.PrevRole = types.RoleNone
 
+	
 	return e
 }

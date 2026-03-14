@@ -11,7 +11,8 @@ type MsgType int
 
 const (
 	MsgHeartbeat MsgType = iota
-	MsgSnapshot
+	MsgSnapshotHall
+	MsgSnapshotCabs
 	MsgHallOrder
 	MsgCompletedOrder
 	MsgBackupHallOrderACK
@@ -19,7 +20,7 @@ const (
 	Msgwelcome
 	MsgSetHallLights
 	MsgTurnOffHallLights
-	
+	MsgCabOrders
 	
 )
 
@@ -44,6 +45,10 @@ type SnapshotHallOrdersMessage struct {
 	Hall [types.NumFloors][types.NumHallButtons]bool `json:"hall"`
 }
 
+type SnapshotCabOrdersMessage struct {
+	Cabs map[string]types.CabOrderMatrix `json:"cabs"`
+}
+
 type BackupHallOrderACK struct {
 	Ack bool `json:"ack"`
 	
@@ -62,6 +67,11 @@ type WelcomeMessage struct {
 type HallOrderMessage struct {
 	Floor  int `json:"floor"`
 	Button elevio.ButtonType `json:"button"` 
+}
+
+type CabOrderMessage struct {
+	Cabs [types.NumFloors]bool `json:"cabs"`
+	NodeIP string
 }
 
 type CompletedOrderMessage struct {
