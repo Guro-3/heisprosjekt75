@@ -59,22 +59,21 @@ func toHAllAssignment(matrix [][2]bool) types.HAllAssignment {
 	return out
 }
 
-func chooseOwner(floor int,button int, proposedAssignment map[string]types.HAllAssignment,finalAssignment map[string]types.HAllAssignment) string {
+func chooseOwner(floor int, button int, proposedAssignment map[string]types.HAllAssignment, finalAssignment map[string]types.HAllAssignment) string {
 
 	owner := ""
 
 	for id, matrix := range types.CurrentAssignment {
-	 _, alive := types.WorldView[id]; 
-	 if alive && matrix[floor][button] {
+		_, alive := types.WorldView[id]
+		if alive && matrix[floor][button] {
 			owner = id
 			break
 		}
 	}
 
-	
 	if owner == "" {
 		for id, matrix := range proposedAssignment {
-			if matrix[f][b] {
+			if matrix[floor][button] {
 				owner = id
 				break
 			}
