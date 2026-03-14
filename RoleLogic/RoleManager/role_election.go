@@ -12,8 +12,8 @@ func RoleElection(peers peers.PeerUpdate, e *types.Elevator, ps *types.PeerState
 
 	if len(peers.Peers) == 1 {
 		ps.PrimaryID = e.MyID
-		ElevatorP.SingleElevatorOrderRedelegation(e, doorStartTimerCh)
 		e.Mode = types.SingleElevator
+		ElevatorP.SingleElevatorOrderRedelegation(e, doorStartTimerCh)
 		log.Println("Elevator mode: ", e.Mode)
 	} else {
 		ps.PrimaryID = peers.Peers[0]

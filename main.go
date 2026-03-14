@@ -103,7 +103,10 @@ func main() {
 					delete(types.CurrentAssignment, lostID)
 					sendmessages.SendSnapshot(ps, e, types.FullOrderMatrix)
 				}
-				schedueler.MasterSchedueler(e, ps, doorStartTimerCh)
+				if len(p.Peers) > 1{
+					schedueler.MasterSchedueler(e, ps, doorStartTimerCh)
+				}
+				
 
 			}
 
