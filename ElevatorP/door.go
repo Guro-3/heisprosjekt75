@@ -17,12 +17,12 @@ func onDoorOpen(doorStartTimerCh chan int, e *types.Elevator, ps *types.PeerStat
 	doorStartTimerCh <- types.TimeDoorOpenDuration
 }
 
-func OnDoortimeout(doorStartTimerCh chan int, e *types.Elevator) {
+func OnDoortimeout(doorStartTimerCh chan int, e *types.Elevator, ps *types.PeerState) {
 	if e.Obstructed {
 		return
 	}
 	elevio.SetDoorOpenLamp(false)
-	StartAction(e)
+	StartAction(e , doorStartTimerCh, ps)
 }
 
 func OnObstruction(obstructionBtnCh chan bool, e *types.Elevator, doorStartTimerCh chan int) {

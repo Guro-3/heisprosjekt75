@@ -33,15 +33,15 @@ func ButtonPressedServiceOrder(e *types.Elevator, btnFloor int, btnType elevio.B
 		}
 
 		AddOrder(e, btnFloor, btnType)
-		StartAction(e)
+		StartAction(e , doorStartTimerCh, ps)
 	}
 }
 
-func StartAction(e *types.Elevator) {
+func StartAction(e *types.Elevator, doorStartTimerCh chan int,ps *types.PeerState) {
 	if e.Obstructed {
 		return
 	}
-	Dir, Nextstate := chooseDirection(e)
+	Dir, Nextstate := chooseDirection(e , doorStartTimerCh, ps)
 
 	switch Nextstate {
 	case types.Moving:

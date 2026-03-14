@@ -10,6 +10,7 @@ const TimeDoorOpenDuration = 3
 
 type ElevatorState int
 type ElevatorMode int
+type StopCondition int
 
 const (
 	Idle ElevatorState = iota
@@ -21,6 +22,12 @@ const (
 const (
 	SingleElevator ElevatorMode = iota
 	PrimaryBackup
+)
+
+const (
+	UpOrder StopCondition = iota
+	DownOrder 
+	CabOrder
 )
 
 type Elevator struct {
@@ -35,4 +42,5 @@ type Elevator struct {
 	MyID            string
 	ElevIP          string
 	Ps              PeerState
+	StopCond        StopCondition
 }

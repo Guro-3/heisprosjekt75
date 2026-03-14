@@ -81,7 +81,7 @@ func main() {
 		case newFloor := <-reechFloorCh:
 			ElevatorP.ServiceOrderAtFloor(e, newFloor, doorStartTimerCh, ps)
 		case <-doorTimeoutCh:
-			ElevatorP.OnDoortimeout(doorStartTimerCh, e)
+			ElevatorP.OnDoortimeout(doorStartTimerCh, e, ps)
 		case p := <-peerUpdateCh:
 			fmt.Printf("Peer update:\n")
 			fmt.Printf("  Peers:    %s\n", p.Peers)
@@ -99,11 +99,11 @@ func main() {
 
 			if len(p.Lost) > 0 && ps.Role == types.RolePrimary {
 				for _, lostID := range p.Lost {
-				delete(types.WorldView, lostID)
-				delete(types.CurrentAssignment, lostID)
+					delete(types.WorldView, lostID)
+					delete(types.CurrentAssignment, lostID)
 				}
 				schedueler.MasterSchedueler(e, ps, doorStartTimerCh)
-				
+
 			}
 
 		case PrimaryIdIp := <-UDPHeartbeatRx:
