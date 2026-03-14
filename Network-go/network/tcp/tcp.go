@@ -3,13 +3,13 @@ package tcp
 import (
 	"bufio"
 	"encoding/json"
-	utilities "heisprosjekt75/Utilities"
 	"heisprosjekt75/types"
 	"log"
 	"net"
 	"strings"
 	"time"
-)
+	"heisprosjekt75/Messages/MessageLogic"
+)	
 
 func readLoop(conn net.Conn, incomingTCP chan Message) {
 	defer conn.Close()
@@ -100,30 +100,11 @@ func handleNewNode(conn net.Conn, incomingTCP chan Message, e *types.Elevator) {
 	writer.WriteString(string(jsonMsg) + "\n")
 	writer.Flush()
 
-	///// kanskje gjøre til en funksjon
-	ip := utilities.GetIP(msgNodeID)
-	cabOrders, ok := types.ActiveCabOrders[ip]; 
-	log.Println("IP som kommer inn: ", ip)
-
-	if  ok {
-
-		msg := Message{
-			Type:        MsgCabOrders,
-			NodeID:      e.MyID,
-			MessageData: cabOrders,
-		}
-
-		data, err := json.Marshal(msg)
-		if err != nil {
-			log.Println("cab order marshal error:", err)
-			return
-		}
-
-		writer.WriteString(string(data) + "\n")
-		writer.Flush()
-	}
 
 	go readLoop(conn, incomingTCP)
+	messagelogic.SendCabOrder(msgNodeID, e)
+
+	
 }
 
 func ConnectToPrimary(ps *types.PeerState, port string, e *types.Elevator, incomingTCP chan Message) {

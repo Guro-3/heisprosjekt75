@@ -33,7 +33,7 @@ func ButtonPressedServiceOrder(e *types.Elevator, btnFloor int, btnType elevio.B
 		}
 
 		AddOrder(e, btnFloor, btnType)
-		StartAction(e , doorStartTimerCh, ps)
+		StartAction(e, doorStartTimerCh, ps)
 	}
 }
 

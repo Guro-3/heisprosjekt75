@@ -15,6 +15,7 @@ func AddOrder(e *types.Elevator, btnFloor int, btn elevio.ButtonType) {
 		SetCabLight(btnFloor)
 		if e.Mode == types.PrimaryBackup {
 			sendmessages.SendCabOrdersToPrimary(&e.Ps, e, e.CabOrderMatrix)
+			log.Println("sender caborders to primary")
 		}
 	case elevio.BT_HallUp:
 		e.HallOrderMatrix[btnFloor][elevio.BT_HallUp] = true

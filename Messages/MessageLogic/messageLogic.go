@@ -7,6 +7,7 @@ import (
 	sendmessages "heisprosjekt75/Messages/SendMessages"
 	"heisprosjekt75/Network-go/network/tcp"
 	schedueler "heisprosjekt75/Schedueler"
+	utilities "heisprosjekt75/Utilities"
 	"heisprosjekt75/types"
 	"log"
 )
@@ -44,7 +45,7 @@ func OnMessageReceive(msg tcp.Message, ps *types.PeerState, e *types.Elevator, d
 			sendmessages.SendSnapshotCabs(ps, e, types.ActiveCabOrders)
 			log.Println("Dette er i switch case RolePrimary messageCabOrder")
 		default:
-			for f := e.CurrentFloor + 1; f < types.NumFloors; f++ {
+			for f := 0; f < types.NumFloors; f++ {
 				if order.Cabs[f] {
 					ElevatorP.AddOrder(e, f, elevio.BT_Cab)
 				}
@@ -165,4 +166,14 @@ func OnMessageReceive(msg tcp.Message, ps *types.PeerState, e *types.Elevator, d
 		btn := elevio.ButtonEvent{Floor: TurnOffHallLightMsg.Floor, Button: elevio.ButtonType(TurnOffHallLightMsg.Button)}
 		ElevatorP.TurnOffHallLight(btn.Button, btn.Floor)
 	}
+}
+
+
+
+func SendCabOrder(msgNodeID string,e *types.Elevator){
+	ip := utilities.GetIP(msgNodeID)
+	cabOrders, ok := types.ActiveCabOrders[ip]
+	if ok {
+    	sendmessages.SendCabOrdersToNode(&e.Ps, e, cabOrders, msgNodeID)
+	}	
 }
