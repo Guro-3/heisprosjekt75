@@ -101,6 +101,7 @@ func main() {
 				for _, lostID := range p.Lost {
 					delete(types.WorldView, lostID)
 					delete(types.CurrentAssignment, lostID)
+					sendmessages.SendSnapshot(ps, e, types.FullOrderMatrix)
 				}
 				schedueler.MasterSchedueler(e, ps, doorStartTimerCh)
 
