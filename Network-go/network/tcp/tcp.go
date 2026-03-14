@@ -117,6 +117,7 @@ func ConnectToPrimary(ps *types.PeerState, port string, e *types.Elevator, incom
 			time.Sleep(5 * time.Second)
 			continue
 		}
+		log.Println("Connected to primary")
 
 		ps.PrimaryConn = conn
 		writer := bufio.NewWriter(conn)
