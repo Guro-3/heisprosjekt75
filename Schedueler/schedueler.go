@@ -80,6 +80,15 @@ func chooseOwner(floor int, button int, proposedAssignment map[string]types.HAll
 		}
 	}
 
+	other := 1 - button
+	if owner != "" && finalAssignment[owner][floor][other] {
+		for ID := range types.WorldView {
+			if ID != owner {
+				owner = ID
+				break
+			}
+		}
+	}
 	return owner
 }
 
