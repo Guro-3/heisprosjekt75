@@ -10,6 +10,10 @@ func onDoorOpen(doorStartTimerCh chan int, e *types.Elevator, ps *types.PeerStat
 	prevDir := e.Dir
 	e.State = types.DoorOpen
 
+	for elevio.GetFloor() == -1 {
+		continue
+	}
+
 	elevio.SetMotorDirection(elevio.MD_Stop)
 	elevio.SetDoorOpenLamp(true)
 
