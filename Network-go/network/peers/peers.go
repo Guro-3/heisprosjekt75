@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"time"
+	"sort"
 )
 
 type PeerUpdate struct {
@@ -85,8 +86,8 @@ func Receiver(myId string, peerUpdateCh chan<- PeerUpdate) {
 					for k := range lastSeen {
 						p.Peers = append(p.Peers, k)
 					}
-					//sort.Strings(p.Peers)
-					//sort.Strings(p.Lost)
+					sort.Strings(p.Peers)
+					sort.Strings(p.Lost)
 					peerUpdateCh <- p
 				}
 				continue
@@ -126,8 +127,8 @@ func Receiver(myId string, peerUpdateCh chan<- PeerUpdate) {
 			for k := range lastSeen {
 				p.Peers = append(p.Peers, k)
 			}
-			//sort.Strings(p.Peers)
-			//sort.Strings(p.Lost)
+			sort.Strings(p.Peers)
+			sort.Strings(p.Lost)
 			peerUpdateCh <- p
 		}
 	}
