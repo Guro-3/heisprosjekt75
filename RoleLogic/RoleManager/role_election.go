@@ -18,8 +18,8 @@ func RoleElection(peers peers.PeerUpdate, e *types.Elevator, ps *types.PeerState
 		e.Mode = types.SingleElevator
 		ElevatorP.SingleElevatorOrderRedelegation(e, doorStartTimerCh)
 		log.Println("Elevator mode: ", e.Mode)
-		ip, _ := localip.LocalIP()
-		e.MyID = fmt.Sprintf("%d-%s", time.Now().UnixNano(), ip)
+		//ip, _ := localip.LocalIP()
+		//e.MyID = fmt.Sprintf("%d-%s", time.Now().UnixNano(), ip)
 	} else {
 		ps.PrimaryID = peers.Peers[0]
 		e.Mode = types.PrimaryBackup
