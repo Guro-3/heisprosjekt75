@@ -43,4 +43,7 @@ type Elevator struct {
 	ElevIP          string
 	Ps              PeerState
 	StopCond        StopCondition
+	OrderDir		elevio.MotorDirection
+	ClearedRevDir   bool
+
 }

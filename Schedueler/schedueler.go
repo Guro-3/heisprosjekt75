@@ -80,19 +80,6 @@ func chooseOwner(floor int, button int, proposedAssignment map[string]types.HAll
 		}
 	}
 
-	//et forsøk på å ikke gi både UP og DOWN til samme heis hvis mulig
-	other := 1 - button
-
-	if owner != "" && finalAssignment[owner][floor][other] {
-
-		for ID := range types.WorldView {
-			if ID != owner {
-				owner = ID
-				break
-			}
-		}
-	}
-
 	return owner
 }
 
