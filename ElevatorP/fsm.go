@@ -45,8 +45,8 @@ func StartAction(e *types.Elevator, doorStartTimerCh chan int, ps *types.PeerSta
 	if e.State != types.DoorOpen &&
 		elevio.GetFloor() != -1 &&
 		e.CurrentFloor == elevio.GetFloor() &&
-		(cabOrdersHere(e) || hallOrderUpHere(e) || hallOrderDownHere(e)) { // ENDRET
-		onDoorOpen(doorStartTimerCh, e, ps) // ENDRET
+		(cabOrdersHere(e) || hallOrderUpHere(e) || hallOrderDownHere(e)) { 
+		onDoorOpen(doorStartTimerCh, e, ps) 
 		return
 	}
 	Dir, Nextstate := chooseDirection(e)
