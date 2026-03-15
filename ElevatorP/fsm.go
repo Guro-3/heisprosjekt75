@@ -11,8 +11,8 @@ func ButtonPressedServiceOrder(e *types.Elevator, btnFloor int, btnType elevio.B
 
 	case types.DoorOpen:
 		if shouldClearAtFloorImmediately(e, btnFloor, btnType) {
-			//TurnOffHallLight(btnType, btnFloor)
-			AddOrder(e, btnFloor, btnType)
+			TurnOffHallLight(btnType, btnFloor)
+			//AddOrder(e, btnFloor, btnType)
 			onDoorOpen(doorStartTimerCh, e, ps)
 
 		} else {
@@ -26,8 +26,8 @@ func ButtonPressedServiceOrder(e *types.Elevator, btnFloor int, btnType elevio.B
 	case types.Idle:
 
 		if shouldClearAtFloorImmediately(e, btnFloor, btnType) {
-			//TurnOffHallLight(btnType, btnFloor)
-			AddOrder(e, btnFloor, btnType)
+			TurnOffHallLight(btnType, btnFloor)
+			//AddOrder(e, btnFloor, btnType)
 			onDoorOpen(doorStartTimerCh, e, ps)
 			return
 		}
@@ -42,13 +42,14 @@ func StartAction(e *types.Elevator, doorStartTimerCh chan int, ps *types.PeerSta
 		return
 	}
 
-	if e.State != types.DoorOpen &&
+	/*if e.State != types.DoorOpen &&
 		elevio.GetFloor() != -1 &&
 		e.CurrentFloor == elevio.GetFloor() &&
 		(cabOrdersHere(e) || hallOrderUpHere(e) || hallOrderDownHere(e)) { 
 		onDoorOpen(doorStartTimerCh, e, ps) 
 		return
-	}
+	}*/
+	
 	Dir, Nextstate := chooseDirection(e)
 
 	switch Nextstate {

@@ -28,6 +28,7 @@ func OnMessageReceive(msg tcp.Message, ps *types.PeerState, e *types.Elevator, d
 			}
 
 		default:
+			log.Println("got an order at floor:  ", order.Floor, "button: ", order.Button)
 			ElevatorP.HandleAsignedOrder(e, order.Floor, order.Button, doorStartTimerCh, ps)
 
 		}
@@ -43,10 +44,10 @@ func OnMessageReceive(msg tcp.Message, ps *types.PeerState, e *types.Elevator, d
 		switch ps.Role {
 		case types.RolePrimary:
 
-			if !types.FullOrderMatrix[orderComplete.Floor][orderComplete.Button] { 
-				log.Printf("Ignoring duplicate completion for floor:%d button:%d", 
-					orderComplete.Floor, orderComplete.Button) 
-				return 
+			if !types.FullOrderMatrix[orderComplete.Floor][orderComplete.Button] {
+				log.Printf("Ignoring duplicate completion for floor:%d button:%d",
+					orderComplete.Floor, orderComplete.Button)
+				return
 			}
 			types.FullOrderMatrix[orderComplete.Floor][orderComplete.Button] = false
 
@@ -57,7 +58,7 @@ func OnMessageReceive(msg tcp.Message, ps *types.PeerState, e *types.Elevator, d
 
 			log.Printf("FullOrderMatrix CLEAR -> floor:%d button:%d", // ENDRET
 				orderComplete.Floor, orderComplete.Button) // ENDRET
-			
+
 			sendmessages.SendSnapshot(ps, e, types.FullOrderMatrix)
 
 		default:

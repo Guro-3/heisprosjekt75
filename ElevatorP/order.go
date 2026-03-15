@@ -289,6 +289,7 @@ func clearAtCurrentFloor(e *types.Elevator, prevDir elevio.MotorDirection, ps *t
 
 	var btnCleared []elevio.ButtonEvent
 
+	log.Println("order direction:",e.OrderDir)
 	switch e.OrderDir{
 	case elevio.MD_Up:
 		if e.HallOrderMatrix[e.CurrentFloor][elevio.BT_HallUp] { 
@@ -296,6 +297,7 @@ func clearAtCurrentFloor(e *types.Elevator, prevDir elevio.MotorDirection, ps *t
 			if IsSingleElevatorMode(e){
 				TurnOffHallLight(elevio.BT_HallUp, e.CurrentFloor)
 			}
+			log.Println("var en ordre ", elevio.MD_Up," på floor :",e.CurrentFloor)
 			btnCleared = append(btnCleared, elevio.ButtonEvent{ 
 				Floor:  e.CurrentFloor,
 				Button: elevio.BT_HallUp,
@@ -307,6 +309,7 @@ func clearAtCurrentFloor(e *types.Elevator, prevDir elevio.MotorDirection, ps *t
 			if IsSingleElevatorMode(e){
 				TurnOffHallLight(elevio.BT_HallDown, e.CurrentFloor)
 			}
+			log.Println("var en ordre ", elevio.MD_Down," på floor :",e.CurrentFloor)
 			btnCleared = append(btnCleared, elevio.ButtonEvent{ 
 				Floor:  e.CurrentFloor,
 				Button: elevio.BT_HallDown,
@@ -318,6 +321,7 @@ func clearAtCurrentFloor(e *types.Elevator, prevDir elevio.MotorDirection, ps *t
 			if IsSingleElevatorMode(e){
 				TurnOffHallLight(elevio.BT_HallUp, e.CurrentFloor)
 			}
+			log.Println("var en ordre opp i ", elevio.MD_Stop," på floor :",e.CurrentFloor)
 			btnCleared = append(btnCleared, elevio.ButtonEvent{ 
 				Floor:  e.CurrentFloor,
 				Button: elevio.BT_HallUp,
@@ -327,6 +331,7 @@ func clearAtCurrentFloor(e *types.Elevator, prevDir elevio.MotorDirection, ps *t
 			if IsSingleElevatorMode(e){
 				TurnOffHallLight(elevio.BT_HallDown, e.CurrentFloor)
 			}
+			log.Println("var en ordre ned i ", elevio.MD_Stop," på floor :",e.CurrentFloor)
 			btnCleared = append(btnCleared, elevio.ButtonEvent{ 
 				Floor:  e.CurrentFloor,
 				Button: elevio.BT_HallDown,
