@@ -74,7 +74,7 @@ func chooseOwner(floor int, button int, proposedAssignment map[string]types.HAll
 
 	if owner == "" {
 		for id, matrix := range proposedAssignment {
-			
+
 			_, alive := types.WorldView[id]
 			if alive && matrix[floor][button] && !finalAssignment[id][floor][other] {
 				owner = id
@@ -84,7 +84,7 @@ func chooseOwner(floor int, button int, proposedAssignment map[string]types.HAll
 	}
 
 	if owner == "" {
-		for id:= range types.WorldView {
+		for id := range types.WorldView {
 			_, alive := types.WorldView[id]
 			if alive && !finalAssignment[id][floor][other] {
 				owner = id
@@ -93,8 +93,8 @@ func chooseOwner(floor int, button int, proposedAssignment map[string]types.HAll
 		}
 	}
 
-	log.Println("owner av ordre blre",owner)
-	
+	log.Println("owner av ordre blre", owner)
+
 	return owner
 }
 

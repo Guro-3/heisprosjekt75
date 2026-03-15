@@ -66,6 +66,7 @@ func main() {
 	go ElevatorP.OnObstruction(obstructionBtnCh, e, doorStartTimerCh)
 
 	tcp.StartHeartbeatSender(ps, TCPHeartbeatCh)
+	go tcp.HeartbeatTick(e, ps, 5*time.Second, TCPHeartbeatCh)
 
 	if elevio.GetFloor() == -1 {
 		ElevatorP.OnInitBetweenFloor(e)
@@ -93,9 +94,8 @@ func main() {
 				rolechanges.RolesSwitched(ps, TCPPort, TCPRx, e)
 				ps.PrevRole = ps.Role
 
-				if ps.Role == types.RoleBackup {
-					go tcp.HeartbeatTick(e, ps, 5*time.Second, TCPHeartbeatCh)
-				}
+					
+				
 			}
 
 			if len(p.Lost) > 0 && ps.Role == types.RolePrimary {
