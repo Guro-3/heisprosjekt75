@@ -48,9 +48,7 @@ func clearOppositeAtAtCurrentFloor(e *types.Elevator, ps *types.PeerState) {
 	e.HallOrderMatrix[e.CurrentFloor][btn] = false
 	if IsSingleElevatorMode(e) {
 		TurnOffHallLight(btn, e.CurrentFloor)
-	}
-
-	if !IsSingleElevatorMode(e) {
+	}else{
 		btnEvent := elevio.ButtonEvent{Floor: e.CurrentFloor, Button: btn}
 		messagecomplete.OrderCompleted(btnEvent, e, ps)
 	}

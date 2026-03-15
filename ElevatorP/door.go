@@ -9,7 +9,8 @@ import (
 func onDoorOpen(doorStartTimerCh chan int, e *types.Elevator, ps *types.PeerState) {
 	prevDir := e.Dir
 	e.State = types.DoorOpen
-
+	
+	
 	for elevio.GetFloor() == -1 {
 		continue
 	}

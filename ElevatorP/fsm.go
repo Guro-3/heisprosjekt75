@@ -5,15 +5,14 @@ import (
 	"heisprosjekt75/types"
 )
 
-
-
 func ButtonPressedServiceOrder(e *types.Elevator, btnFloor int, btnType elevio.ButtonType, doorStartTimerCh chan int, ps *types.PeerState) {
-	
+
 	switch e.State {
 
 	case types.DoorOpen:
 		if shouldClearAtFloorImmediately(e, btnFloor, btnType) {
-			TurnOffHallLight(btnType, btnFloor)
+			//TurnOffHallLight(btnType, btnFloor)
+			AddOrder(e, btnFloor, btnType)
 			onDoorOpen(doorStartTimerCh, e, ps)
 
 		} else {
@@ -27,21 +26,30 @@ func ButtonPressedServiceOrder(e *types.Elevator, btnFloor int, btnType elevio.B
 	case types.Idle:
 
 		if shouldClearAtFloorImmediately(e, btnFloor, btnType) {
-			TurnOffHallLight(btnType, btnFloor)
+			//TurnOffHallLight(btnType, btnFloor)
+			AddOrder(e, btnFloor, btnType)
 			onDoorOpen(doorStartTimerCh, e, ps)
 			return
 		}
 
 		AddOrder(e, btnFloor, btnType)
-		StartAction(e , doorStartTimerCh, ps)
+		StartAction(e, doorStartTimerCh, ps)
 	}
 }
 
-func StartAction(e *types.Elevator, doorStartTimerCh chan int,ps *types.PeerState) {
+func StartAction(e *types.Elevator, doorStartTimerCh chan int, ps *types.PeerState) {
 	if e.Obstructed {
 		return
 	}
-	Dir, Nextstate := chooseDirection(e , doorStartTimerCh, ps)
+
+	if e.State != types.DoorOpen &&
+		elevio.GetFloor() != -1 &&
+		e.CurrentFloor == elevio.GetFloor() &&
+		(cabOrdersHere(e) || hallOrderUpHere(e) || hallOrderDownHere(e)) { // ENDRET
+		onDoorOpen(doorStartTimerCh, e, ps) // ENDRET
+		return
+	}
+	Dir, Nextstate := chooseDirection(e)
 
 	switch Nextstate {
 	case types.Moving:
@@ -55,7 +63,6 @@ func StartAction(e *types.Elevator, doorStartTimerCh chan int,ps *types.PeerStat
 		elevio.SetMotorDirection(elevio.MD_Stop)
 	}
 }
-
 
 func ServiceOrderAtFloor(e *types.Elevator, newFloor int, doorStartTimerCh chan int, ps *types.PeerState) {
 	e.CurrentFloor = newFloor

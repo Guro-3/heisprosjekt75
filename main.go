@@ -22,6 +22,7 @@ import (
 func main() {
 
 	var elevAddr string
+	
 	var id string
 	const (
 		d            = 500 * time.Millisecond
@@ -103,10 +104,9 @@ func main() {
 					delete(types.CurrentAssignment, lostID)
 					sendmessages.SendSnapshot(ps, e, types.FullOrderMatrix)
 				}
-				if len(p.Peers) > 1{
+				if len(p.Peers) > 1 {
 					schedueler.MasterSchedueler(e, ps, doorStartTimerCh)
 				}
-				
 
 			}
 
