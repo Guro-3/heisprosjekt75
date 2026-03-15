@@ -1,13 +1,10 @@
 package RoleManager
 
 import (
-	"fmt"
 	"heisprosjekt75/ElevatorP"
-	"heisprosjekt75/Network-go/network/localip"
 	"heisprosjekt75/Network-go/network/peers"
 	"heisprosjekt75/types"
 	"log"
-	"time"
 )
 
 func RoleElection(peers peers.PeerUpdate, e *types.Elevator, ps *types.PeerState, doorStartTimerCh chan int) {
