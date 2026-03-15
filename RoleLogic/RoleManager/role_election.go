@@ -10,22 +10,26 @@ import (
 func RoleElection(peers peers.PeerUpdate, e *types.Elevator, ps *types.PeerState, doorStartTimerCh chan int) {
 	ps.PrevRole = ps.Role
 
-	if len(peers.Peers) == 1 {
+	ps.PrimaryID = ""
+	ps.BackupID = ""
+
+	if len(peers.Peers) <= 1 {
 		ps.PrimaryID = e.MyID
+		ps.Role = types.RolePrimary
 		e.Mode = types.SingleElevator
 		ElevatorP.SingleElevatorOrderRedelegation(e, doorStartTimerCh)
-		log.Println("Elevator mode: ", e.Mode)
-		//ip, _ := localip.LocalIP()
-		//e.MyID = fmt.Sprintf("%d-%s", time.Now().UnixNano(), ip)
-	} else {
-		ps.PrimaryID = peers.Peers[0]
-		e.Mode = types.PrimaryBackup
-		log.Println("Elevator mode: ", e.Mode)
+
+		log.Println("Elevator mode:", e.Mode)
+		log.Println("my role is Primary (single mode)")
+		return
 	}
 
-	if len(peers.Peers) >= 2 {
-		ps.BackupID = peers.Peers[1]
-	}
+	ps.PrimaryID = peers.Peers[0]
+	ps.BackupID = peers.Peers[1]
+	e.Mode = types.PrimaryBackup
+	log.Println("Elevator mode:", e.Mode)
+
+	
 
 	switch e.MyID {
 	case ps.PrimaryID:

@@ -12,6 +12,7 @@ import (
 	"heisprosjekt75/Network-go/network/localip"
 	PrimaryHeartbeat "heisprosjekt75/Network-go/network/primaryHeartbeat"
 	"heisprosjekt75/Network-go/network/tcp"
+	"heisprosjekt75/Network-go/network/Networkloss"
 	rolechanges "heisprosjekt75/RoleLogic/RoleChanges"
 	"heisprosjekt75/RoleLogic/RoleManager"
 	schedueler "heisprosjekt75/Schedueler"
@@ -54,6 +55,8 @@ func main() {
 	doorTimeoutCh := make(chan int, 10)
 	doorStartTimerCh := make(chan int, 10)
 	obstructionBtnCh := make(chan bool)
+	networkStatusCh := make(chan bool,10)
+
 
 	go bcast.Transmitter(brodcastPort, UDPHeartbeatTx)
 	go bcast.Receiver(brodcastPort, UDPHeartbeatRx)
@@ -64,6 +67,8 @@ func main() {
 	go ElevatorP.DoorTimeManager(e, doorTimeoutCh, doorStartTimerCh)
 	go elevio.PollObstructionSwitch(obstructionBtnCh)
 	go ElevatorP.OnObstruction(obstructionBtnCh, e, doorStartTimerCh)
+	go Networkloss.PollNetworkConnection(networkStatusCh)       // ENDRET
+
 
 	tcp.StartHeartbeatSender(ps, TCPHeartbeatCh)
 	go tcp.HeartbeatTick(e, ps, 5*time.Second, TCPHeartbeatCh)
@@ -117,6 +122,13 @@ func main() {
 
 		case message := <-TCPRx:
 			messagelogic.OnMessageReceive(message, ps, e, doorStartTimerCh)
+			
+		case connected:= <-networkStatusCh:
+			if !connected{
+				Networkloss.HandleNetworkLost(ps,e,doorStartTimerCh)
+			} else {
+				Networkloss.HandleNetworkRestored(ps,e)
+			}
 		}
 
 	}

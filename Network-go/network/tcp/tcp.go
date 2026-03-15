@@ -10,8 +10,24 @@ import (
 	"time"
 )
 
-func readLoop(conn net.Conn, incomingTCP chan Message) {
-	defer conn.Close()
+func readLoop(conn net.Conn, incomingTCP chan Message, ps *types.PeerState, connectedNodeID string) {
+	defer func() {
+		_ = conn.Close()
+
+		// Hvis dette er connectionen til primary, nullstill den når den dør
+		if ps != nil && ps.PrimaryConn == conn {
+			ps.PrimaryConn = nil
+			log.Println("Primary connection lost -> ps.PrimaryConn = nil")
+		}
+
+		// Hvis dette er en node-connection hos primary, fjern den fra map
+		if connectedNodeID != "" {
+			if existingConn, exists := nodeConnMap[connectedNodeID]; exists && existingConn == conn {
+				delete(nodeConnMap, connectedNodeID)
+				log.Println("Removed node from nodeConnMap:", connectedNodeID)
+			}
+		}
+	}()
 
 	reader := bufio.NewReader(conn)
 	for {
@@ -96,15 +112,37 @@ func handleNewNode(conn net.Conn, incomingTCP chan Message, e *types.Elevator) {
 		return
 	}
 
-	writer.WriteString(string(jsonMsg) + "\n")
-	writer.Flush()
+	_, err = writer.WriteString(string(jsonMsg) + "\n")
+	if err != nil {
+		log.Println("write error in handleNewNode:", err)
+		delete(nodeConnMap, msgNodeID)
+		_ = conn.Close()
+		return
+	}
 
-	go readLoop(conn, incomingTCP)
+	err = writer.Flush()
+	if err != nil {
+		log.Println("flush error in handleNewNode:", err)
+		delete(nodeConnMap, msgNodeID)
+		_ = conn.Close()
+		return
+	}
+
+	go readLoop(conn, incomingTCP, nil, msgNodeID)
 }
 
 func ConnectToPrimary(ps *types.PeerState, port string, e *types.Elevator, incomingTCP chan Message) {
 
 	for {
+		if ps.Role == types.RolePrimary {
+			return
+		}
+
+		// Hvis vi allerede er koblet til, stopp
+		if ps.PrimaryConn != nil {
+			return
+		}
+
 		if ps.PrimaryIP == "" {
 			time.Sleep(100 * time.Millisecond)
 			continue
@@ -114,7 +152,7 @@ func ConnectToPrimary(ps *types.PeerState, port string, e *types.Elevator, incom
 		conn, err := net.Dial("tcp", primaryAddr)
 		if err != nil {
 			log.Println("Error connecting to primary:", err)
-			time.Sleep(5 * time.Second)
+			time.Sleep(1 * time.Second)
 			continue
 		}
 		log.Println("Connected to primary")
@@ -136,10 +174,25 @@ func ConnectToPrimary(ps *types.PeerState, port string, e *types.Elevator, incom
 			return
 		}
 
-		writer.WriteString(string(jsonMsg) + "\n")
-		writer.Flush()
+		_, err = writer.WriteString(string(jsonMsg) + "\n")
+		if err != nil {
+			log.Println("write error:", err)
+			_ = conn.Close()
+			ps.PrimaryConn = nil
+			time.Sleep(1 * time.Second)
+			continue
+		}
 
-		go readLoop(conn, incomingTCP)
+		err = writer.Flush()
+		if err != nil {
+			log.Println("flush error:", err)
+			_ = conn.Close()
+			ps.PrimaryConn = nil
+			time.Sleep(1 * time.Second)
+			continue
+		}
+
+		go readLoop(conn, incomingTCP, ps, "")
 		break
 	}
 }
@@ -212,4 +265,3 @@ func StartHeartbeatSender(ps *types.PeerState, heartbeatCh <-chan Message) {
 		}
 	}()
 }
-
