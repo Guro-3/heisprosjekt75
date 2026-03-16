@@ -52,8 +52,7 @@ func OnMessageReceive(msg tcp.Message, ps *types.PeerState, e *types.Elevator, d
 			return
 		}
 
-		log.Printf("Completed order at floor:%d button:%d by elevator:%s\n",
-			orderComplete.Floor, orderComplete.Button, msg.NodeID)
+	
 
 		switch ps.Role {
 		case types.RolePrimary:
@@ -121,7 +120,6 @@ func OnMessageReceive(msg tcp.Message, ps *types.PeerState, e *types.Elevator, d
 		}
 	case tcp.MsgStateSnapshot:
 		bytes, err := json.Marshal(msg.MessageData)
-		log.Printf("går inn i MsgStateSnapshot")
 		if err != nil {
 			log.Println("Marshal MsgStateSnapshot failed:", err)
 			return
@@ -154,7 +152,6 @@ func OnMessageReceive(msg tcp.Message, ps *types.PeerState, e *types.Elevator, d
 		}
 
 	case tcp.MsgRestoreCabOrders:
-		log.Printf("går inn i MsgRestoreCabOrders")
 		bytes, err := json.Marshal(msg.MessageData)
 		if err != nil {
 			log.Println("Marshal MsgRestoreCabOrders failed:", err)

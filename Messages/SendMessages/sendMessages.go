@@ -4,7 +4,6 @@ import (
 	"heisprosjekt75/Driver-go/elevio"
 	"heisprosjekt75/Network-go/network/tcp"
 	"heisprosjekt75/types"
-	"log"
 	"time"
 )
 
@@ -22,7 +21,6 @@ func SendStateSnapshot(ps *types.PeerState, e *types.Elevator) {
 	if ps.BackupID == "" {
 		return
 	}
-	log.Println("entered sendStateStapshot som id:", e.StableID)
 
 	worldCopy := make(map[string]types.ElevatorStatus)
 	for k, v := range types.WorldView {
@@ -112,7 +110,7 @@ func SendRestoreCabOrders(ps *types.PeerState, e *types.Elevator, targetPeerID s
 		NodeID:      e.MyID,
 		MessageData: messageData,
 	}
-	log.Printf("er inni sendRestoreCaborders")
+
 	tcp.SendTCP(targetPeerID, buttonMessage, ps)
 }
 

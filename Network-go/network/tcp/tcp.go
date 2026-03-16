@@ -3,7 +3,7 @@ package tcp
 import (
 	"bufio"
 	"encoding/json"
-	
+
 	"heisprosjekt75/types"
 	"log"
 	"net"
@@ -271,12 +271,6 @@ func HeartbeatTick(e *types.Elevator, ps *types.PeerState, d time.Duration, TCPH
 		TCPHeartBeat <- msg
 	}
 }
-
-
-
-
-
-
 
 func StartHeartbeatSender(ps *types.PeerState, heartbeatCh <-chan Message) {
 	go func() {
