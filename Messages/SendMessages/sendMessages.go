@@ -43,14 +43,21 @@ func SendStateSnapshot(ps *types.PeerState, e *types.Elevator) {
 		stableToPeerCopy[k] = v
 	}
 
+	cabCopy := make(map[string][]bool)
+
+	for peerID, state := range types.WorldView {
+		cabCopy[peerID] = append([]bool(nil), state.CabRequests...)
+	}
+
 	messageData := tcp.StateSnapshotMessage{
 		Hall:             types.FullOrderMatrix,
 		WorldView:        worldCopy,
 		LostCabOrders:    lostCopy,
 		PeerIDToStableID: peerToStableCopy,
 		StableIDToPeerID: stableToPeerCopy,
+		CabOrders:        cabCopy,
 	}
-
+	
 	buttonMessage := tcp.Message{
 		Type:        tcp.MsgStateSnapshot,
 		NodeID:      e.MyID,

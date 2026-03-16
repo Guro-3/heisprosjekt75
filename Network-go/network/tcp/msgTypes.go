@@ -42,11 +42,12 @@ type SnapshotHallOrdersMessage struct {
 }
 
 type StateSnapshotMessage struct {
-	Hall             [types.NumFloors][types.NumHallButtons]bool `json:"hall"`
-	WorldView        map[string]types.ElevatorStatus             `json:"worldView"`
-	LostCabOrders    map[string][types.NumFloors]bool            `json:"lostCabOrders"`
-	PeerIDToStableID map[string]string                           `json:"peerIdToStableId"`
-	StableIDToPeerID map[string]string                           `json:"stableIdToPeerId"`
+	Hall             [types.NumFloors][types.NumHallButtons]bool
+	WorldView        map[string]types.ElevatorStatus
+	LostCabOrders    map[string][types.NumFloors]bool
+	PeerIDToStableID map[string]string
+	StableIDToPeerID map[string]string
+	CabOrders        map[string][]bool
 }
 
 type RestoreCabOrdersMessage struct {

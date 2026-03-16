@@ -138,6 +138,13 @@ func OnMessageReceive(msg tcp.Message, ps *types.PeerState, e *types.Elevator, d
 			types.LostCabOrders = snapshot.LostCabOrders
 			types.PeerIDToStableID = snapshot.PeerIDToStableID
 			types.StableIDToPeerID = snapshot.StableIDToPeerID
+
+			for peerID, cabs := range snapshot.CabOrders {
+				state := types.WorldView[peerID]
+				state.CabRequests = cabs
+				types.WorldView[peerID] = state
+			}
+
 			sendmessages.BackupHallOrderACK(ps, e)
 
 		default:
