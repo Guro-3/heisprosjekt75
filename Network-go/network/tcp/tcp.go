@@ -3,7 +3,7 @@ package tcp
 import (
 	"bufio"
 	"encoding/json"
-
+	"io"
 	"heisprosjekt75/types"
 	"log"
 	"net"
@@ -12,25 +12,35 @@ import (
 )
 
 func readLoop(conn net.Conn, incomingTCP chan Message) {
-	defer conn.Close()
+    defer func() {
+        if conn != nil {
+            _ = conn.Close()
+        }
+    }()
 
-	reader := bufio.NewReader(conn)
-	for {
-		line, err := reader.ReadString('\n') //hvor langt skal en string være? dette må skrives inn i parantesen
-		if err != nil {
-			log.Println("Message reading error in read loop: ", err)
-			return
-		}
+    reader := bufio.NewReader(conn)
+    for {
+        line, err := reader.ReadString('\n')
+        if err != nil {
+            if err == io.EOF {
+                log.Println("Connection closed by client.")
+            } else {
+                log.Println("Message reading error in read loop: ", err)
+            }
+            return
+        }
 
-		line = strings.TrimSpace(line)
-		var msg Message
-		err = json.Unmarshal([]byte(line), &msg)
-		if err != nil {
-			log.Println("json decode error in read loop: ", err)
-			continue
-		}
-		incomingTCP <- msg
-	}
+        line = strings.TrimSpace(line)
+
+        var msg Message
+        err = json.Unmarshal([]byte(line), &msg)
+        if err != nil {
+            log.Println("json decode error in read loop: ", err)
+            continue 
+        }
+
+        incomingTCP <- msg
+    }
 }
 
 func StartPrimaryTCP(ps *types.PeerState, port string, incomingTCP chan Message, e *types.Elevator) {
@@ -52,12 +62,19 @@ func StartPrimaryTCP(ps *types.PeerState, port string, incomingTCP chan Message,
 }
 
 func handleNewNode(conn net.Conn, incomingTCP chan Message, e *types.Elevator, ps *types.PeerState) {
+	// Ensure the connection is closed when the function exits
+    defer func() {
+        if conn != nil {
+            _ = conn.Close()
+        }
+    }()
+
 	reader := bufio.NewReader(conn)
 
 	line, err := reader.ReadString('\n')
 	if err != nil {
 		log.Println("Message reading error in handleNewNode:", err)
-		_ = conn.Close()
+		//_ = conn.Close()
 		return
 	}
 
@@ -67,13 +84,13 @@ func handleNewNode(conn net.Conn, incomingTCP chan Message, e *types.Elevator, p
 	err = json.Unmarshal([]byte(line), &msg)
 	if err != nil {
 		log.Println("json decode error in handleNewNode:", err)
-		_ = conn.Close()
+		//_ = conn.Close()
 		return
 	}
 
 	if msg.Type != Msghello {
 		log.Println("expected Msghello, got", msg.Type)
-		_ = conn.Close()
+		//_ = conn.Close()
 		return
 	}
 
@@ -81,13 +98,13 @@ func handleNewNode(conn net.Conn, incomingTCP chan Message, e *types.Elevator, p
 	helloBytes, err := json.Marshal(msg.MessageData)
 	if err != nil {
 		log.Println("marshal hello data failed:", err)
-		_ = conn.Close()
+		//_ = conn.Close()
 		return
 	}
 
 	if err := json.Unmarshal(helloBytes, &hello); err != nil {
 		log.Println("unmarshal hello data failed:", err)
-		_ = conn.Close()
+		//_ = conn.Close()
 		return
 	}
 
@@ -116,20 +133,20 @@ func handleNewNode(conn net.Conn, incomingTCP chan Message, e *types.Elevator, p
 	jsonMsg, err := json.Marshal(welcome)
 	if err != nil {
 		log.Println("json marshal error in handleNewNode:", err)
-		_ = conn.Close()
+		//_ = conn.Close()
 		return
 	}
 
 	_, err = writer.WriteString(string(jsonMsg) + "\n")
 	if err != nil {
 		log.Println("write welcome failed:", err)
-		_ = conn.Close()
+		//_ = conn.Close()
 		return
 	}
 
 	if err := writer.Flush(); err != nil {
 		log.Println("flush welcome failed:", err)
-		_ = conn.Close()
+		//_ = conn.Close()
 		return
 	}
 
