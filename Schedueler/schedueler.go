@@ -100,7 +100,7 @@ func chooseOwner(floor int, button int, proposedAssignment map[string]types.HAll
 
 func MasterSchedueler(e *types.Elevator, ps *types.PeerState, doorStartTimerCh chan int) {
 
-	types.UpdateMyState(e)
+	
 
 	hallRequests := make([][2]bool, types.NumFloors)
 

@@ -84,10 +84,14 @@ func OnMessageReceive(msg tcp.Message, ps *types.PeerState, e *types.Elevator, d
 				State:       heartBeat.State,
 				CabRequests: heartBeat.CabRequests,
 			}
+			types.UpdateMyState(e)
 
 			if heartBeat.StableID != "" {
 				types.PeerIDToStableID[msg.NodeID] = heartBeat.StableID
 				types.StableIDToPeerID[heartBeat.StableID] = msg.NodeID
+
+				types.PeerIDToStableID[e.MyID] = e.StableID
+				types.StableIDToPeerID[e.StableID] = e.MyID
 			}
 
 		default:
