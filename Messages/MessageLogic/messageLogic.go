@@ -30,9 +30,9 @@ func OnMessageReceive(msg tcp.Message, ps *types.PeerState, e *types.Elevator, d
 
 		switch ps.Role {
 		case types.RolePrimary:
-			/*if !types.FullOrderMatrix[order.Floor][order.Button] {
+			if !types.FullOrderMatrix[order.Floor][order.Button] {
 				types.FullOrderMatrix[order.Floor][order.Button] = true
-			}*/
+			}
 
 		default:
 			log.Printf("Assigned order received -> floor:%d button:%d\n", order.Floor, order.Button)
