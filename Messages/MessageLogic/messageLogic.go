@@ -83,6 +83,7 @@ func OnMessageReceive(msg tcp.Message, ps *types.PeerState, e *types.Elevator, d
 				CabRequests: heartBeat.CabRequests,
 			}
 			types.UpdateMyState(e)
+			log.Println("print worlwiew,", types.WorldView)
 
 			if heartBeat.StableID != "" {
 				types.PeerIDToStableID[msg.NodeID] = heartBeat.StableID
