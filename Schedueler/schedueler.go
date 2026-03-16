@@ -93,8 +93,6 @@ func chooseOwner(floor int, button int, proposedAssignment map[string]types.HAll
 		}
 	}
 
-	log.Println("owner av ordre blre", owner)
-
 	return owner
 }
 

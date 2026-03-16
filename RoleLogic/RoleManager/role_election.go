@@ -7,15 +7,6 @@ import (
 	"log"
 )
 
-func containsPeer(peerList []string, id string) bool {
-	for _, p := range peerList {
-		if p == id {
-			return true
-		}
-	}
-	return false
-}
-
 func RoleElection(peerUpdate peers.PeerUpdate, e *types.Elevator, ps *types.PeerState, doorStartTimerCh chan int) {
 	ps.PrevRole = ps.Role
 	peerList := peerUpdate.Peers
