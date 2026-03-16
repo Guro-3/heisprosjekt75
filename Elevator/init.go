@@ -1,12 +1,11 @@
-package ElevatorP
+package Elevator
 
 import (
 	"heisprosjekt75/Driver-go/elevio"
 	"heisprosjekt75/types"
-	"log"
 )
 
-func NewElevator(myID string, myIP string) *types.Elevator {
+func InitNewElevator(myID string, myIP string) *types.Elevator {
 	LightInit()
 
 	e := &types.Elevator{
@@ -16,9 +15,15 @@ func NewElevator(myID string, myIP string) *types.Elevator {
 		Dir:    elevio.MD_Stop,
 		Mode:   types.SingleElevator,
 	}
-	log.Println("Elevator mode: ", e.Mode)
 	e.Ps.Role = types.RoleNone
 	e.Ps.PrevRole = types.RoleNone
 
 	return e
+}
+
+func InitBetweenFloor(e *types.Elevator) {
+	e.Initializing = true
+	elevio.SetMotorDirection(elevio.MD_Down)
+	e.Dir = elevio.MD_Down
+	e.State = types.Moving
 }

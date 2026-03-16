@@ -1,4 +1,4 @@
-package ElevatorP
+package Elevator
 
 import (
 	"heisprosjekt75/Driver-go/elevio"
@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func onDoorOpen(doorStartTimerCh chan int, e *types.Elevator, ps *types.PeerState) {
+func DoorOpen(doorStartTimerCh chan int, e *types.Elevator) {
 	if elevio.GetFloor() == -1 {
 		return
 	}
@@ -15,19 +15,19 @@ func onDoorOpen(doorStartTimerCh chan int, e *types.Elevator, ps *types.PeerStat
 	elevio.SetMotorDirection(elevio.MD_Stop)
 	elevio.SetDoorOpenLamp(true)
 
-	clearAtCurrentFloor(e, e.OrderDir, ps)
+	clearOrderAtCurrentFloor(e, e.OrderDir)
 
-	e.ClearedRevDir = shouldClearOppositeAtCurrentFloor(e)
+	e.ClearedRevDir = shouldClearOppositeOrderAtCurrentFloor(e)
 
 	doorStartTimerCh <- types.TimeDoorOpenDuration
 }
 
-func OnDoortimeout(doorStartTimerCh chan int, e *types.Elevator, ps *types.PeerState) {
+func DoorTimeout(doorStartTimerCh chan int, e *types.Elevator) {
 	if e.Obstructed {
 		return
 	}
 	if e.ClearedRevDir {
-		clearOppositeAtAtCurrentFloor(e, ps)
+		clearOppositeOrderAtCurrentFloor(e)
 
 		switch e.OrderDir {
 		case elevio.MD_Up:
@@ -42,10 +42,10 @@ func OnDoortimeout(doorStartTimerCh chan int, e *types.Elevator, ps *types.PeerS
 	}
 
 	elevio.SetDoorOpenLamp(false)
-	StartAction(e, doorStartTimerCh, ps)
+	FsmStartAction(e, doorStartTimerCh)
 }
 
-func OnObstruction(obstructionBtnCh chan bool, e *types.Elevator, doorStartTimerCh chan int) {
+func DoorObstruction(obstructionBtnCh chan bool, e *types.Elevator, doorStartTimerCh chan int) {
 	for {
 		obstruction := <-obstructionBtnCh
 

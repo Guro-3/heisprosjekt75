@@ -16,11 +16,10 @@ type PeerUpdate struct {
 const (
 	interval  = 50 * time.Millisecond
 	timeout   = 500 * time.Millisecond
-	mcastIP   = "224.0.0.1" // multicast adresse
-	mcastPort = 10334       // port alle noder bruker
+	mcastIP   = "224.0.0.1" 
+	mcastPort = 10334       
 )
 
-// Transmitter sender ID-periodisk til multicast
 func Transmitter(id string, transmitEnable <-chan bool) {
 	addr, err := net.ResolveUDPAddr("udp4", fmt.Sprintf("%s:%d", mcastIP, mcastPort))
 	if err != nil {
@@ -45,7 +44,6 @@ func Transmitter(id string, transmitEnable <-chan bool) {
 	}
 }
 
-// Receiver lytter på multicast og oppdaterer peers
 func Receiver(myId string, peerUpdateCh chan<- PeerUpdate) {
 	addr, err := net.ResolveUDPAddr("udp4", fmt.Sprintf("%s:%d", mcastIP, mcastPort))
 	if err != nil {
@@ -68,9 +66,7 @@ func Receiver(myId string, peerUpdateCh chan<- PeerUpdate) {
 		conn.SetReadDeadline(time.Now().Add(interval))
 		n, _, err := conn.ReadFromUDP(buf[:])
 		if err != nil {
-			// timeout ok
 			if ne, ok := err.(net.Error); ok && ne.Timeout() {
-				// fjerne døde peers
 				updated := false
 				p.Lost = nil
 				for k, t := range lastSeen {
@@ -101,7 +97,6 @@ func Receiver(myId string, peerUpdateCh chan<- PeerUpdate) {
 			continue
 		}
 
-		// Ny peer?
 		updated := false
 		p.New = ""
 		if _, ok := lastSeen[peerId]; !ok {
@@ -110,8 +105,7 @@ func Receiver(myId string, peerUpdateCh chan<- PeerUpdate) {
 		}
 
 		lastSeen[peerId] = time.Now()
-
-		// fjern døde peers
+		
 		p.Lost = nil
 		for k, t := range lastSeen {
 			if time.Since(t) > timeout {

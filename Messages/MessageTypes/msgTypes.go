@@ -1,10 +1,8 @@
-package tcp
+package messagestypes
 
 import (
 	"heisprosjekt75/Driver-go/elevio"
 	"heisprosjekt75/types"
-	"net"
-	"sync"
 )
 
 type MsgType int
@@ -87,8 +85,3 @@ type HallLightsOffMessage struct {
 	Floor  int               `json:"floor"`
 	Button elevio.ButtonType `json:"button"`
 }
-
-var (
-	nodeConnMap   = make(map[string]net.Conn)
-	nodeConnMapMu sync.RWMutex
-)

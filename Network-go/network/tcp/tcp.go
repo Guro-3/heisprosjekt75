@@ -9,17 +9,17 @@ import (
 	"net"
 	"strings"
 	"time"
+	"heisprosjekt75/Messages/MessageTypes"
+	"sync"
 )
 
 
-// Message struct og ulike meldinger må være definert et annet sted
-// type Message {...}
-// type HeartbeatMessage {...}
-// type HelloMessage {...}
-// type WelcomeMessage {...}
-// const Msghello, Msgwelcome, MsgHeartbeat, etc. {...}
+var (
+	nodeConnMap   = make(map[string]net.Conn)
+	nodeConnMapMu sync.RWMutex
+)
 
-func readLoop(conn net.Conn, incomingTCP chan Message) {
+func readLoop(conn net.Conn, incomingTCP chan messagestypes.Message) {
 	defer conn.Close()
 
 	reader := bufio.NewReader(conn)
@@ -39,7 +39,7 @@ func readLoop(conn net.Conn, incomingTCP chan Message) {
 			continue
 		}
 
-		var msg Message
+		var msg messagestypes.Message
 		err = json.Unmarshal([]byte(line), &msg)
 		if err != nil {
 			log.Println("json decode error in read loop:", err)
@@ -50,7 +50,7 @@ func readLoop(conn net.Conn, incomingTCP chan Message) {
 	}
 }
 
-func StartPrimaryTCP(ps *types.PeerState, port string, incomingTCP chan Message, e *types.Elevator) {
+func StartPrimaryTCP(port string, incomingTCP chan messagestypes.Message, e *types.Elevator) {
 	listener, err := net.Listen("tcp", ":"+port)
 	if err != nil {
 		log.Println("Error creating listener:", err)
@@ -63,12 +63,12 @@ func StartPrimaryTCP(ps *types.PeerState, port string, incomingTCP chan Message,
 				log.Println("Error accepting TCP connection:", err)
 				continue
 			}
-			go handleNewNode(conn, incomingTCP, e, ps)
+			go handleNewNode(conn, incomingTCP, e)
 		}
 	}()
 }
 
-func handleNewNode(conn net.Conn, incomingTCP chan Message, e *types.Elevator, ps *types.PeerState) {
+func handleNewNode(conn net.Conn, incomingTCP chan messagestypes.Message, e *types.Elevator) {
 	
 
 	reader := bufio.NewReader(conn)
@@ -79,18 +79,18 @@ func handleNewNode(conn net.Conn, incomingTCP chan Message, e *types.Elevator, p
 	}
 
 	line = strings.TrimSpace(line)
-	var msg Message
+	var msg messagestypes.Message
 	if err := json.Unmarshal([]byte(line), &msg); err != nil {
 		log.Println("json decode error in handleNewNode:", err)
 		return
 	}
 
-	if msg.Type != Msghello {
+	if msg.Type != messagestypes.Msghello {
 		log.Println("expected Msghello, got", msg.Type)
 		return
 	}
 
-	var hello HelloMessage
+	var hello messagestypes.HelloMessage
 	helloBytes, _ := json.Marshal(msg.MessageData)
 	if err := json.Unmarshal(helloBytes, &hello); err != nil {
 		log.Println("unmarshal hello data failed:", err)
@@ -109,10 +109,10 @@ func handleNewNode(conn net.Conn, incomingTCP chan Message, e *types.Elevator, p
 
 	writer := bufio.NewWriter(conn)
 
-	welcome := Message{
-		Type:   Msgwelcome,
+	welcome := messagestypes.Message{
+		Type:   messagestypes.Msgwelcome,
 		NodeID: e.MyID,
-		MessageData: WelcomeMessage{
+		MessageData: messagestypes.WelcomeMessage{
 			NodeID: msg.NodeID,
 		},
 	}
@@ -121,37 +121,37 @@ func handleNewNode(conn net.Conn, incomingTCP chan Message, e *types.Elevator, p
 	writer.WriteString(string(jsonMsg) + "\n")
 	writer.Flush()
 
-	handleRestoreCabOrders(ps, e, msg.NodeID, hello.StableID)
+	handleRestoreCabOrders(e, msg.NodeID, hello.StableID)
 	go readLoop(conn, incomingTCP)
 }
 
-func ConnectToPrimary(ps *types.PeerState, port string, e *types.Elevator, incomingTCP chan Message) {
+func ConnectToPrimary(port string, e *types.Elevator, incomingTCP chan messagestypes.Message) {
 	for {
-		if ps.PrimaryIP == "" {
+		if e.Ps.PrimaryIP == "" {
 			time.Sleep(100 * time.Millisecond)
 			continue
 		}
 
-		if ps.PrimaryConn != nil {
-			ps.PrimaryConn.Close()
-			ps.PrimaryConn = nil
+		if e.Ps.PrimaryConn != nil {
+			e.Ps.PrimaryConn.Close()
+			e.Ps.PrimaryConn = nil
 		}
 
-		conn, err := net.Dial("tcp", ps.PrimaryIP+":"+port)
+		conn, err := net.Dial("tcp", e.Ps.PrimaryIP+":"+port)
 		if err != nil {
 			log.Println("Error connecting to primary:", err)
 			time.Sleep(500 * time.Millisecond)
 			continue
 		}
 
-		ps.PrimaryConn = conn
+		e.Ps.PrimaryConn = conn
 		writer := bufio.NewWriter(conn)
 
-		hello := Message{
-			Type:   Msghello,
+		hello := messagestypes.Message{
+			Type:   messagestypes.Msghello,
 			NodeID: e.MyID,
-			MessageData: HelloMessage{
-				Role:     types.RoleToString(ps.Role),
+			MessageData: messagestypes.HelloMessage{
+				Role:     types.RoleToString(e.Ps.Role),
 				StableID: e.StableID,
 			},
 		}
@@ -165,7 +165,7 @@ func ConnectToPrimary(ps *types.PeerState, port string, e *types.Elevator, incom
 	}
 }
 
-func SendTCP(receiverID string, message Message, ps *types.PeerState) {
+func SendTCP(receiverID string, message messagestypes.Message, ps *types.PeerState) {
 	var connNode net.Conn
 
 	jsonMessage, _ := json.Marshal(message)
@@ -193,16 +193,16 @@ func SendTCP(receiverID string, message Message, ps *types.PeerState) {
 	writer.Flush()
 }
 
-func HeartbeatTick(e *types.Elevator, ps *types.PeerState, d time.Duration, TCPHeartBeat chan<- Message) {
+func HeartbeatTick(e *types.Elevator, d time.Duration, TCPHeartBeat chan<- messagestypes.Message) {
 	ticker := time.NewTicker(d)
 	defer ticker.Stop()
 
 	for range ticker.C {
-		if ps.Role == types.RolePrimary {
+		if e.Ps.Role == types.RolePrimary {
 			continue
 		}
 
-		heartbeat := HeartbeatMessage{
+		heartbeat := messagestypes.HeartbeatMessage{
 			CurrentFloor: e.CurrentFloor,
 			State:        e.State,
 			Dir:          e.Dir,
@@ -210,8 +210,8 @@ func HeartbeatTick(e *types.Elevator, ps *types.PeerState, d time.Duration, TCPH
 			StableID:     e.StableID,
 		}
 
-		msg := Message{
-			Type:        MsgHeartbeat,
+		msg := messagestypes.Message{
+			Type:        messagestypes.MsgHeartbeat,
 			NodeID:      e.MyID,
 			MessageData: heartbeat,
 		}
@@ -220,7 +220,7 @@ func HeartbeatTick(e *types.Elevator, ps *types.PeerState, d time.Duration, TCPH
 	}
 }
 
-func StartHeartbeatSender(ps *types.PeerState, heartbeatCh <-chan Message) {
+func StartHeartbeatSender(ps *types.PeerState, heartbeatCh <-chan messagestypes.Message) {
 	go func() {
 		for msg := range heartbeatCh {
 			if ps.PrimaryID != "" {
@@ -230,8 +230,8 @@ func StartHeartbeatSender(ps *types.PeerState, heartbeatCh <-chan Message) {
 	}()
 }
 
-func handleRestoreCabOrders(ps *types.PeerState, e *types.Elevator, peerID string, stableID string) {
-	if ps.Role != types.RolePrimary || stableID == "" {
+func handleRestoreCabOrders(e *types.Elevator, peerID string, stableID string) {
+	if e.Ps.Role != types.RolePrimary || stableID == "" {
 		return
 	}
 
@@ -240,19 +240,17 @@ func handleRestoreCabOrders(ps *types.PeerState, e *types.Elevator, peerID strin
 		return
 	}
 
-	log.Printf("Restoring cab orders for stableID %s to peerID %s: %v\n", stableID, peerID, cabs)
-
-	messageData := RestoreCabOrdersMessage{
+	messageData := messagestypes.RestoreCabOrdersMessage{
 		NodeID: peerID,
 		Cabs:   cabs,
 	}
 
-	buttonMessage := Message{
-		Type:        MsgRestoreCabOrders,
+	buttonMessage := messagestypes.Message{
+		Type:        messagestypes.MsgRestoreCabOrders,
 		NodeID:      e.MyID,
 		MessageData: messageData,
 	}
 
-	SendTCP(peerID, buttonMessage, ps)
+	SendTCP(peerID, buttonMessage, &e.Ps)
 	delete(types.LostCabOrders, stableID)
 }

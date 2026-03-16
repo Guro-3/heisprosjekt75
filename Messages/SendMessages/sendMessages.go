@@ -2,23 +2,24 @@ package sendmessages
 
 import (
 	"heisprosjekt75/Driver-go/elevio"
+	"heisprosjekt75/Messages/MessageTypes"
 	"heisprosjekt75/Network-go/network/tcp"
 	"heisprosjekt75/types"
-	"time"
 )
 
-func SendSnapshot(ps *types.PeerState, e *types.Elevator, hallOrderMatrix [types.NumFloors][types.NumHallButtons]bool) {
-	if ps.BackupID == "" {
+func SendSnapshot(e *types.Elevator, hallOrderMatrix [types.NumFloors][types.NumHallButtons]bool) {
+	if e.Ps.BackupID == "" {
 		return
 	}
-
-	messageData := tcp.SnapshotHallOrdersMessage{Hall: hallOrderMatrix}
-	buttonMessage := tcp.Message{Type: tcp.MsgSnapshot, NodeID: e.MyID, MessageData: messageData}
-	tcp.SendTCP(ps.BackupID, buttonMessage, ps)
+	messageData := messagestypes.SnapshotHallOrdersMessage{Hall: hallOrderMatrix}
+	buttonMessage := messagestypes.Message{Type: messagestypes.MsgSnapshot, NodeID: e.MyID, MessageData: messageData}
+	tcp.SendTCP(e.Ps.BackupID, buttonMessage, &e.Ps)
 }
 
-func SendStateSnapshot(ps *types.PeerState, e *types.Elevator) {
-	if ps.BackupID == "" {
+
+
+func SendStateSnapshot(e *types.Elevator) {
+	if e.Ps.BackupID == "" {
 		return
 	}
 
@@ -48,7 +49,7 @@ func SendStateSnapshot(ps *types.PeerState, e *types.Elevator) {
 		cabCopy[peerID] = append([]bool(nil), state.CabRequests...)
 	}
 
-	messageData := tcp.StateSnapshotMessage{
+	messageData := messagestypes.StateSnapshotMessage{
 		Hall:             types.FullOrderMatrix,
 		WorldView:        worldCopy,
 		LostCabOrders:    lostCopy,
@@ -57,81 +58,76 @@ func SendStateSnapshot(ps *types.PeerState, e *types.Elevator) {
 		CabOrders:        cabCopy,
 	}
 
-	buttonMessage := tcp.Message{
-		Type:        tcp.MsgStateSnapshot,
+	buttonMessage := messagestypes.Message{
+		Type:        messagestypes.MsgStateSnapshot,
 		NodeID:      e.MyID,
 		MessageData: messageData,
 	}
 
-	tcp.SendTCP(ps.BackupID, buttonMessage, ps)
+	tcp.SendTCP(e.Ps.BackupID, buttonMessage, &e.Ps)
 }
 
-func SnapshotTick(e *types.Elevator, ps *types.PeerState, d time.Duration) {
-	tic := time.NewTicker(d)
-	defer tic.Stop()
 
-	for range tic.C {
-		if ps.Role != types.RolePrimary {
-			continue
-		}
 
-		SendStateSnapshot(ps, e)
-	}
+func SendBackupHallOrderACK(e *types.Elevator) {
+	messageData := messagestypes.BackupHallOrderACK{Ack: true}
+	buttonMessage := messagestypes.Message{Type: messagestypes.MsgBackupHallOrderACK, NodeID: e.MyID, MessageData: messageData}
+	tcp.SendTCP(e.Ps.PrimaryID, buttonMessage, &e.Ps)
 }
 
-func BackupHallOrderACK(ps *types.PeerState, e *types.Elevator) {
-	messageData := tcp.BackupHallOrderACK{Ack: true}
-	buttonMessage := tcp.Message{Type: tcp.MsgBackupHallOrderACK, NodeID: e.MyID, MessageData: messageData}
-	tcp.SendTCP(ps.PrimaryID, buttonMessage, ps)
-}
+func ButtonTransmitLogic(e *types.Elevator, btn elevio.ButtonEvent) {
+	messageData := messagestypes.HallOrderMessage{Floor: btn.Floor, Button: btn.Button}
+	buttonMessage := messagestypes.Message{Type: messagestypes.MsgHallOrder, NodeID: e.MyID, MessageData: messageData}
 
-func ButtonTransmitLogic(ps *types.PeerState, e *types.Elevator, btn elevio.ButtonEvent) {
-	messageData := tcp.HallOrderMessage{Floor: btn.Floor, Button: btn.Button}
-	buttonMessage := tcp.Message{Type: tcp.MsgHallOrder, NodeID: e.MyID, MessageData: messageData}
-
-	if ps.Role != types.RolePrimary {
-		tcp.SendTCP(ps.PrimaryID, buttonMessage, ps)
+	if e.Ps.Role != types.RolePrimary {
+		tcp.SendTCP(e.Ps.PrimaryID, buttonMessage, &e.Ps)
 	} else {
 		if !types.FullOrderMatrix[btn.Floor][btn.Button] {
 			types.FullOrderMatrix[btn.Floor][btn.Button] = true
-			SendStateSnapshot(ps, e)
+			SendStateSnapshot(e)
 		}
 	}
 }
 
-func SendRestoreCabOrders(ps *types.PeerState, e *types.Elevator, targetPeerID string, cabs [types.NumFloors]bool) {
-	messageData := tcp.RestoreCabOrdersMessage{
+
+
+func SendRestoreCabOrders(e *types.Elevator, targetPeerID string, cabs [types.NumFloors]bool) {
+	messageData := messagestypes.RestoreCabOrdersMessage{
 		NodeID: targetPeerID,
 		Cabs:   cabs,
 	}
 
-	buttonMessage := tcp.Message{
-		Type:        tcp.MsgRestoreCabOrders,
+	buttonMessage := messagestypes.Message{
+		Type:        messagestypes.MsgRestoreCabOrders,
 		NodeID:      e.MyID,
 		MessageData: messageData,
 	}
 
-	tcp.SendTCP(targetPeerID, buttonMessage, ps)
+	tcp.SendTCP(targetPeerID, buttonMessage, &e.Ps)
 }
 
-func SendHallLightOn(ps *types.PeerState, e *types.Elevator, btn elevio.ButtonEvent, world map[string]types.ElevatorStatus) {
-	messageData := tcp.HallLightsOnMessage{Floor: btn.Floor, Button: btn.Button}
-	buttonMessage := tcp.Message{Type: tcp.MsgSetHallLights, NodeID: e.MyID, MessageData: messageData}
+
+
+func SendHallLightOn(e *types.Elevator, btn elevio.ButtonEvent, world map[string]types.ElevatorStatus) {
+	messageData := messagestypes.HallLightsOnMessage{Floor: btn.Floor, Button: btn.Button}
+	buttonMessage := messagestypes.Message{Type: messagestypes.MsgSetHallLights, NodeID: e.MyID, MessageData: messageData}
 
 	for id := range world {
 		if id != e.MyID {
-			tcp.SendTCP(id, buttonMessage, ps)
+			tcp.SendTCP(id, buttonMessage, &e.Ps)
 		}
 	}
 }
 
-func SendHallLightOff(ps *types.PeerState, e *types.Elevator, btn elevio.ButtonEvent, world map[string]types.ElevatorStatus) {
-	messageData := tcp.HallLightsOffMessage{Floor: btn.Floor, Button: btn.Button}
-	buttonMessage := tcp.Message{Type: tcp.MsgTurnOffHallLights, NodeID: e.MyID, MessageData: messageData}
+
+
+func SendHallLightOff(e *types.Elevator, btn elevio.ButtonEvent, world map[string]types.ElevatorStatus) {
+	messageData := messagestypes.HallLightsOffMessage{Floor: btn.Floor, Button: btn.Button}
+	buttonMessage := messagestypes.Message{Type: messagestypes.MsgTurnOffHallLights, NodeID: e.MyID, MessageData: messageData}
 
 	for id := range world {
 		if id != e.MyID {
-			tcp.SendTCP(id, buttonMessage, ps)
+			tcp.SendTCP(id, buttonMessage, &e.Ps)
 		}
 	}
 }

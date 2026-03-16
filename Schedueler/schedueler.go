@@ -3,11 +3,12 @@ package schedueler
 import (
 	"encoding/json"
 	"heisprosjekt75/Driver-go/elevio"
-	"heisprosjekt75/ElevatorP"
+	"heisprosjekt75/Elevator"
 	"heisprosjekt75/Network-go/network/tcp"
 	"heisprosjekt75/types"
 	"log"
 	"os/exec"
+	"heisprosjekt75/Messages/MessageTypes"
 )
 
 func assignHallRequests(input []byte) (map[string][][types.NumHallButtons]bool, error) {
@@ -31,17 +32,17 @@ func assignHallRequests(input []byte) (map[string][][types.NumHallButtons]bool, 
 	return result, nil
 }
 
-func DelegateOrders(receiverID string, ps *types.PeerState, e *types.Elevator, btn elevio.ButtonEvent, world map[string]types.ElevatorStatus) {
+func DelegateOrders(receiverID string, e *types.Elevator, btn elevio.ButtonEvent, world map[string]types.ElevatorStatus) {
 
-	messageData := tcp.HallOrderMessage{Floor: btn.Floor, Button: btn.Button}
+	messageData := messagestypes.HallOrderMessage{Floor: btn.Floor, Button: btn.Button}
 
-	buttonMessage := tcp.Message{
-		Type:        tcp.MsgHallOrder,
+	buttonMessage := messagestypes.Message{
+		Type:        messagestypes.MsgHallOrder,
 		NodeID:      e.MyID,
 		MessageData: messageData,
 	}
 
-	tcp.SendTCP(receiverID, buttonMessage, ps)
+	tcp.SendTCP(receiverID, buttonMessage, &e.Ps)
 }
 
 func toHAllAssignment(matrix [][2]bool) types.HAllAssignment {
@@ -97,7 +98,7 @@ func chooseOwner(floor int, button int, proposedAssignment map[string]types.HAll
 	return owner
 }
 
-func MasterSchedueler(e *types.Elevator, ps *types.PeerState, doorStartTimerCh chan int) {
+func PrimarySchedueler(e *types.Elevator, doorStartTimerCh chan int) {
 	types.UpdateMyState(e)
 
 	hallRequests := make([][2]bool, types.NumFloors)
@@ -172,9 +173,9 @@ func MasterSchedueler(e *types.Elevator, ps *types.PeerState, doorStartTimerCh c
 					log.Printf("Assign -> %s floor:%d button:%d", id, f, b)
 
 					if id == e.MyID {
-						ElevatorP.HandleAsignedOrder(e, f, elevio.ButtonType(b), doorStartTimerCh, ps)
+						Elevator.HandleAssignedOrder(e, f, elevio.ButtonType(b), doorStartTimerCh)
 					} else {
-						DelegateOrders(id, ps, e, btn, types.WorldView)
+						DelegateOrders(id, e, btn, types.WorldView)
 					}
 				}
 			}

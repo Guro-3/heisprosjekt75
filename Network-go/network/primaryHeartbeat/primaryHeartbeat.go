@@ -10,12 +10,12 @@ type PrimHeartbeat struct {
 	PrimaryAddrTCP string
 }
 
-func SendPrimaryIpId(UDPHeartBeatTx chan PrimHeartbeat, d time.Duration, ps *types.PeerState, e *types.Elevator) {
+func SendPrimaryIpId(UDPHeartBeatTx chan PrimHeartbeat, d time.Duration, e *types.Elevator) {
 	tic := time.NewTicker(d)
 	defer tic.Stop()
 
 	for range tic.C {
-		if ps.Role == types.RolePrimary {
+		if e.Ps.Role == types.RolePrimary {
 			UDPHeartBeatTx <- PrimHeartbeat{e.MyID, e.ElevIP}
 		}
 	}

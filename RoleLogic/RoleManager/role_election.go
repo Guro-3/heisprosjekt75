@@ -1,43 +1,42 @@
 package RoleManager
 
 import (
-	"heisprosjekt75/ElevatorP"
+	"heisprosjekt75/Elevator"
 	"heisprosjekt75/Network-go/network/peers"
 	"heisprosjekt75/types"
 	"log"
 )
 
-func RoleElection(peerUpdate peers.PeerUpdate, e *types.Elevator, ps *types.PeerState, doorStartTimerCh chan int) {
-	ps.PrevRole = ps.Role
+func RoleElection(peerUpdate peers.PeerUpdate, e *types.Elevator, doorStartTimerCh chan int) {
+	e.Ps.PrevRole = e.Ps.Role
 	peerList := peerUpdate.Peers
 
-	ps.PrimaryID = ""
-	ps.PrimaryIP = ""
+	e.Ps.PrimaryID = ""
+	e.Ps.PrimaryIP = ""
 
 	if len(peerList) == 1 {
-		ps.PrimaryID = e.MyID
-		ps.BackupID = ""
+		e.Ps.PrimaryID = e.MyID
+		e.Ps.BackupID = ""
 		e.Mode = types.SingleElevator
-		ElevatorP.SingleElevatorOrderRedelegation(e, doorStartTimerCh)
+		Elevator.SingleElevatorOrderRedelegation(e, doorStartTimerCh)
 		log.Println("Elevator mode:", e.Mode)
 	} else {
 		e.Mode = types.PrimaryBackup
 		log.Println("Elevator mode:", e.Mode)
 
-		// Behold eksisterende primary hvis den fortsatt finnes
-		ps.PrimaryID = peerList[0]
-		ps.BackupID = peerList[1]
+		e.Ps.PrimaryID = peerList[0]
+		e.Ps.BackupID = peerList[1]
 	}
 
 	switch e.MyID {
-	case ps.PrimaryID:
-		ps.Role = types.RolePrimary
+	case e.Ps.PrimaryID:
+		e.Ps.Role = types.RolePrimary
 		log.Println("my role is Primary")
-	case ps.BackupID:
-		ps.Role = types.RoleBackup
+	case e.Ps.BackupID:
+		e.Ps.Role = types.RoleBackup
 		log.Println("my role is Backup")
 	default:
-		ps.Role = types.RoleNode
+		e.Ps.Role = types.RoleNode
 		log.Println("my role is Node")
 	}
 }

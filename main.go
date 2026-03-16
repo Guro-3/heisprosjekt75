@@ -4,20 +4,22 @@ import (
 	"flag"
 	"fmt"
 	"heisprosjekt75/Driver-go/elevio"
-	"heisprosjekt75/ElevatorP"
-	messagelogic "heisprosjekt75/Messages/MessageLogic"
-	sendmessages "heisprosjekt75/Messages/SendMessages"
+	"heisprosjekt75/Elevator"
+	"heisprosjekt75/Messages/MessageHandling"
+	"heisprosjekt75/Messages/SendMessages"
+	"heisprosjekt75/Messages"
 	"heisprosjekt75/Network-go/network"
 	"heisprosjekt75/Network-go/network/bcast"
 	"heisprosjekt75/Network-go/network/localip"
-	PrimaryHeartbeat "heisprosjekt75/Network-go/network/primaryHeartbeat"
+	"heisprosjekt75/Network-go/network/primaryHeartbeat"
 	"heisprosjekt75/Network-go/network/tcp"
-	rolechanges "heisprosjekt75/RoleLogic/RoleChanges"
+	"heisprosjekt75/RoleLogic/RoleChanges"
 	"heisprosjekt75/RoleLogic/RoleManager"
-	schedueler "heisprosjekt75/Schedueler"
+	"heisprosjekt75/Schedueler"
 	"heisprosjekt75/types"
 	"log"
 	"time"
+	"heisprosjekt75/Messages/MessageTypes"
 )
 
 func main() {
@@ -35,19 +37,18 @@ func main() {
 	flag.Parse()
 
 	elevio.Init(elevAddr, 4)
-	ps := &types.PeerState{}
 
 	peerID, peerUpdateCh := network.NetworkInit()
 
 	ip, _ := localip.LocalIP()
 
-	e := ElevatorP.NewElevator(peerID, ip)
+	e := Elevator.InitNewElevator(peerID, ip)
 	e.StableID = stableID
 
 	UDPHeartbeatTx := make(chan PrimaryHeartbeat.PrimHeartbeat, 10)
 	UDPHeartbeatRx := make(chan PrimaryHeartbeat.PrimHeartbeat, 10)
-	TCPRx := make(chan tcp.Message, 10)
-	TCPHeartbeatCh := make(chan tcp.Message, 10)
+	TCPRx := make(chan messagestypes.Message, 10)
+	TCPHeartbeatCh := make(chan messagestypes.Message, 10)
 
 	reaciveBtnCh := make(chan elevio.ButtonEvent, 10)
 	reechFloorCh := make(chan int, 10)
@@ -57,34 +58,34 @@ func main() {
 
 	go bcast.Transmitter(brodcastPort, UDPHeartbeatTx)
 	go bcast.Receiver(brodcastPort, UDPHeartbeatRx)
-	go PrimaryHeartbeat.SendPrimaryIpId(UDPHeartbeatTx, d, ps, e)
+	go PrimaryHeartbeat.SendPrimaryIpId(UDPHeartbeatTx, d, e)
 
 	go elevio.PollButtons(reaciveBtnCh)
 	go elevio.PollFloorSensor(reechFloorCh)
-	go ElevatorP.DoorTimeManager(e, doorTimeoutCh, doorStartTimerCh)
+	go Elevator.DoorTimeManager(e, doorTimeoutCh, doorStartTimerCh)
 	go elevio.PollObstructionSwitch(obstructionBtnCh)
-	go ElevatorP.OnObstruction(obstructionBtnCh, e, doorStartTimerCh)
+	go Elevator.DoorObstruction(obstructionBtnCh, e, doorStartTimerCh)
 
-	tcp.StartHeartbeatSender(ps, TCPHeartbeatCh)
+	tcp.StartHeartbeatSender(&e.Ps, TCPHeartbeatCh)
 
 	if elevio.GetFloor() == -1 {
-		ElevatorP.OnInitBetweenFloor(e)
+		Elevator.InitBetweenFloor(e)
 	}
 
 	for {
 		select {
 		case btn := <-reaciveBtnCh:
 			if e.Mode == types.SingleElevator || btn.Button == elevio.BT_Cab {
-				ElevatorP.ButtonPressedServiceOrder(e, btn.Floor, btn.Button, doorStartTimerCh, ps)
+				Elevator.FsmServiceLocalButton(e, btn.Floor, btn.Button, doorStartTimerCh)
 			} else {
-				sendmessages.ButtonTransmitLogic(ps, e, btn)
+				sendmessages.ButtonTransmitLogic(e, btn)
 			}
 
 		case newFloor := <-reechFloorCh:
-			ElevatorP.ServiceOrderAtFloor(e, newFloor, doorStartTimerCh, ps)
+			Elevator.FsmServiceOrderAtFloor(e, newFloor, doorStartTimerCh)
 
 		case <-doorTimeoutCh:
-			ElevatorP.OnDoortimeout(doorStartTimerCh, e, ps)
+			Elevator.DoorTimeout(doorStartTimerCh, e)
 
 		case p := <-peerUpdateCh:
 			fmt.Printf("Peer update:\n")
@@ -92,46 +93,46 @@ func main() {
 			fmt.Printf("  New:      %s\n", p.New)
 			fmt.Printf("  Lost:     %s\n", p.Lost)
 
-			RoleManager.RoleElection(p, e, ps, doorStartTimerCh)
+			RoleManager.RoleElection(p, e, doorStartTimerCh)
 
-			if ps.PrevRole != ps.Role {
-				rolechanges.RolesSwitched(ps, TCPPort, TCPRx, e)
-				ps.PrevRole = ps.Role
+			if e.Ps.PrevRole != e.Ps.Role {
+				rolechanges.RolesSwitched(TCPPort, TCPRx, e)
+				e.Ps.PrevRole = e.Ps.Role
 
-				if ps.Role != types.RolePrimary {
-					go tcp.HeartbeatTick(e, ps, 1*time.Second, TCPHeartbeatCh)
+				if e.Ps.Role != types.RolePrimary {
+					go tcp.HeartbeatTick(e, 1*time.Second, TCPHeartbeatCh)
 					log.Println("entred by stableID:", e.StableID)
 				} else {
-					go sendmessages.SnapshotTick(e, ps, 500*time.Millisecond)
+					go messages.SnapshotTick(e, 500*time.Millisecond)
 				}
 			}
 
-			rolechanges.HandleLostPeers(p.Lost, e, ps, doorStartTimerCh, p.Peers)
+			rolechanges.HandleLostPeers(p.Lost, e, doorStartTimerCh, p.Peers)
 
 			for stableID, cabs := range types.LostCabOrders {
 				log.Println("entred by stableID:", e.StableID)
 				log.Printf("lost caborder for stableID: %s, cabs: %v\n", stableID, cabs)
 			}
 
-			if len(p.Lost) > 0 && ps.Role == types.RolePrimary && len(p.Peers) > 1 {
-				schedueler.MasterSchedueler(e, ps, doorStartTimerCh)
+			if len(p.Lost) > 0 && e.Ps.Role == types.RolePrimary && len(p.Peers) > 1 {
+				schedueler.PrimarySchedueler(e, doorStartTimerCh)
 			}
 
 		case PrimaryIdIp := <-UDPHeartbeatRx:
-			oldPrimaryID := ps.PrimaryID
+			oldPrimaryID := e.Ps.PrimaryID
 
-			ps.PrimaryID = PrimaryIdIp.PrimaryID
-			ps.PrimaryIP = PrimaryIdIp.PrimaryAddrTCP
+			e.Ps.PrimaryID = PrimaryIdIp.PrimaryID
+			e.Ps.PrimaryIP = PrimaryIdIp.PrimaryAddrTCP
 
-			if ps.Role != types.RolePrimary &&
-				ps.PrimaryID != "" &&
-				ps.PrimaryID != oldPrimaryID {
-				log.Println("Primary changed, reconnecting to new primary:", ps.PrimaryID)
-				go tcp.ConnectToPrimary(ps, TCPPort, e, TCPRx)
+			if e.Ps.Role != types.RolePrimary &&
+				e.Ps.PrimaryID != "" &&
+				e.Ps.PrimaryID != oldPrimaryID {
+				log.Println("Primary changed, reconnecting to new primary:", e.Ps.PrimaryID)
+				go tcp.ConnectToPrimary(TCPPort, e, TCPRx)
 			}
 
 		case message := <-TCPRx:
-			messagelogic.OnMessageReceive(message, ps, e, doorStartTimerCh)
+			messagelogic.OnMessageReceive(message, e, doorStartTimerCh)
 		}
 	}
 }

@@ -3,22 +3,23 @@ package rolechanges
 import (
 	"heisprosjekt75/Network-go/network/tcp"
 	"heisprosjekt75/types"
+	"heisprosjekt75/Messages/MessageTypes"
 )
 
-func RolesSwitched(ps *types.PeerState, port string, incomingTCP chan tcp.Message, e *types.Elevator) {
-	if ps.Role == types.RolePrimary {
-		if ps.PrimaryConn != nil {
-			ps.PrimaryConn.Close()
+func RolesSwitched(port string, incomingTCP chan messagestypes.Message, e *types.Elevator) {
+	if e.Ps.Role == types.RolePrimary {
+		if e.Ps.PrimaryConn != nil {
+			e.Ps.PrimaryConn.Close()
 		}
 
-		tcp.StartPrimaryTCP(ps, port, incomingTCP, e)
+		tcp.StartPrimaryTCP(port, incomingTCP, e)
 	} else {
-		go tcp.ConnectToPrimary(ps, port, e, incomingTCP)
+		go tcp.ConnectToPrimary(port, e, incomingTCP)
 	}
 }
 
-func HandleLostPeers(lost []string, e *types.Elevator, ps *types.PeerState, doorStartTimerCh chan int, currentPeers []string) {
-	if ps.Role != types.RolePrimary || len(lost) == 0 {
+func HandleLostPeers(lost []string, e *types.Elevator, doorStartTimerCh chan int, currentPeers []string) {
+	if e.Ps.Role != types.RolePrimary || len(lost) == 0 {
 		return
 	}
 
