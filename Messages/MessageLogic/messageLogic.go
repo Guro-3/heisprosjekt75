@@ -115,7 +115,6 @@ func OnMessageReceive(msg tcp.Message, ps *types.PeerState, e *types.Elevator, d
 
 		default:
 			log.Println("Error: Wrong elevator got SnapshotHallOrdersMessage")
-		}
 
 	case tcp.MsgStateSnapshot:
 		bytes, err := json.Marshal(msg.MessageData)
