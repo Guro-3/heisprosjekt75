@@ -20,15 +20,8 @@ func RoleElection(peerUpdate peers.PeerUpdate, e *types.Elevator, ps *types.Peer
 	ps.PrevRole = ps.Role
 	peerList := peerUpdate.Peers
 
-	// Hvis kjent primary er mistet, rydd den bort
-	if ps.PrimaryID != "" && containsPeer(peerUpdate.Lost, ps.PrimaryID) {
-		if ps.PrimaryConn != nil {
-			_ = ps.PrimaryConn.Close()
-			ps.PrimaryConn = nil
-		}
-		ps.PrimaryID = ""
-		ps.PrimaryIP = ""
-	}
+	ps.PrimaryID = ""
+	ps.PrimaryIP = ""
 
 	if len(peerList) == 1 {
 		ps.PrimaryID = e.MyID
@@ -41,17 +34,8 @@ func RoleElection(peerUpdate peers.PeerUpdate, e *types.Elevator, ps *types.Peer
 		log.Println("Elevator mode:", e.Mode)
 
 		// Behold eksisterende primary hvis den fortsatt finnes
-		if ps.PrimaryID == "" || !containsPeer(peerList, ps.PrimaryID) {
-			ps.PrimaryID = peerList[0]
-		}
-
-		ps.BackupID = ""
-		for _, id := range peerList {
-			if id != ps.PrimaryID {
-				ps.BackupID = id
-				break
-			}
-		}
+		ps.PrimaryID = peerList[0]
+		ps.BackupID = peerList[1]
 	}
 
 	switch e.MyID {
