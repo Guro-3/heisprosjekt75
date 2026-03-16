@@ -32,7 +32,6 @@ func OnMessageReceive(msg tcp.Message, ps *types.PeerState, e *types.Elevator, d
 		case types.RolePrimary:
 			if !types.FullOrderMatrix[order.Floor][order.Button] {
 				types.FullOrderMatrix[order.Floor][order.Button] = true
-				sendmessages.SendStateSnapshot(ps, e)
 			}
 
 		default:

@@ -5,6 +5,7 @@ import (
 	"heisprosjekt75/Network-go/network/tcp"
 	"heisprosjekt75/types"
 	"log"
+	"time"
 )
 
 func SendSnapshot(ps *types.PeerState, e *types.Elevator, hallOrderMatrix [types.NumFloors][types.NumHallButtons]bool) {
@@ -57,7 +58,7 @@ func SendStateSnapshot(ps *types.PeerState, e *types.Elevator) {
 		StableIDToPeerID: stableToPeerCopy,
 		CabOrders:        cabCopy,
 	}
-	
+
 	buttonMessage := tcp.Message{
 		Type:        tcp.MsgStateSnapshot,
 		NodeID:      e.MyID,
@@ -65,6 +66,19 @@ func SendStateSnapshot(ps *types.PeerState, e *types.Elevator) {
 	}
 
 	tcp.SendTCP(ps.BackupID, buttonMessage, ps)
+}
+
+func SnapshotTick(e *types.Elevator, ps *types.PeerState, d time.Duration) {
+	tic := time.NewTicker(d)
+	defer tic.Stop()
+
+	for range tic.C {
+		if ps.Role != types.RolePrimary {
+			continue
+		}
+
+		SendStateSnapshot(ps, e)
+	}
 }
 
 func BackupHallOrderACK(ps *types.PeerState, e *types.Elevator) {
