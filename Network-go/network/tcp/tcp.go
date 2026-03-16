@@ -3,57 +3,64 @@ package tcp
 import (
 	"bufio"
 	"encoding/json"
-	"io"
 	"heisprosjekt75/types"
+	"io"
 	"log"
 	"net"
 	"strings"
 	"time"
 )
 
+
+// Message struct og ulike meldinger må være definert et annet sted
+// type Message {...}
+// type HeartbeatMessage {...}
+// type HelloMessage {...}
+// type WelcomeMessage {...}
+// const Msghello, Msgwelcome, MsgHeartbeat, etc. {...}
+
 func readLoop(conn net.Conn, incomingTCP chan Message) {
-    defer func() {
-        if conn != nil {
-            _ = conn.Close()
-        }
-    }()
+	defer conn.Close()
 
-    reader := bufio.NewReader(conn)
-    for {
-        line, err := reader.ReadString('\n')
-        if err != nil {
-            if err == io.EOF {
-                log.Println("Connection closed by client.")
-            } else {
-                log.Println("Message reading error in read loop: ", err)
-            }
-            return
-        }
+	reader := bufio.NewReader(conn)
+	for {
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			if err == io.EOF {
+				log.Println("Connection closed by client.")
+			} else {
+				log.Println("Message reading error in read loop:", err)
+			}
+			return
+		}
 
-        line = strings.TrimSpace(line)
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
 
-        var msg Message
-        err = json.Unmarshal([]byte(line), &msg)
-        if err != nil {
-            log.Println("json decode error in read loop: ", err)
-            continue 
-        }
+		var msg Message
+		err = json.Unmarshal([]byte(line), &msg)
+		if err != nil {
+			log.Println("json decode error in read loop:", err)
+			continue
+		}
 
-        incomingTCP <- msg
-    }
+		incomingTCP <- msg
+	}
 }
 
 func StartPrimaryTCP(ps *types.PeerState, port string, incomingTCP chan Message, e *types.Elevator) {
-
 	listener, err := net.Listen("tcp", ":"+port)
 	if err != nil {
-		log.Println("Error with listning object")
+		log.Println("Error creating listener:", err)
+		return
 	}
 	go func() {
 		for {
 			conn, err := listener.Accept()
 			if err != nil {
-				log.Println("Error with listning conn")
+				log.Println("Error accepting TCP connection:", err)
 				continue
 			}
 			go handleNewNode(conn, incomingTCP, e, ps)
@@ -62,62 +69,42 @@ func StartPrimaryTCP(ps *types.PeerState, port string, incomingTCP chan Message,
 }
 
 func handleNewNode(conn net.Conn, incomingTCP chan Message, e *types.Elevator, ps *types.PeerState) {
-	// Ensure the connection is closed when the function exits
-    defer func() {
-        if conn != nil {
-            _ = conn.Close()
-        }
-    }()
+	defer conn.Close()
 
 	reader := bufio.NewReader(conn)
-
 	line, err := reader.ReadString('\n')
 	if err != nil {
 		log.Println("Message reading error in handleNewNode:", err)
-		//_ = conn.Close()
 		return
 	}
 
 	line = strings.TrimSpace(line)
-
 	var msg Message
-	err = json.Unmarshal([]byte(line), &msg)
-	if err != nil {
+	if err := json.Unmarshal([]byte(line), &msg); err != nil {
 		log.Println("json decode error in handleNewNode:", err)
-		//_ = conn.Close()
 		return
 	}
 
 	if msg.Type != Msghello {
 		log.Println("expected Msghello, got", msg.Type)
-		//_ = conn.Close()
 		return
 	}
 
 	var hello HelloMessage
-	helloBytes, err := json.Marshal(msg.MessageData)
-	if err != nil {
-		log.Println("marshal hello data failed:", err)
-		//_ = conn.Close()
-		return
-	}
-
+	helloBytes, _ := json.Marshal(msg.MessageData)
 	if err := json.Unmarshal(helloBytes, &hello); err != nil {
 		log.Println("unmarshal hello data failed:", err)
-		//_ = conn.Close()
 		return
 	}
 
-	msgNodeID := msg.NodeID
-
 	nodeConnMapMu.Lock()
-	nodeConnMap[msgNodeID] = conn
+	nodeConnMap[msg.NodeID] = conn
 	nodeConnMapMu.Unlock()
 
 	if hello.StableID != "" {
-		types.PeerIDToStableID[msgNodeID] = hello.StableID
-		types.StableIDToPeerID[hello.StableID] = msgNodeID
-		log.Printf("Registered stableID %s for peerID %s\n", hello.StableID, msgNodeID)
+		types.PeerIDToStableID[msg.NodeID] = hello.StableID
+		types.StableIDToPeerID[hello.StableID] = msg.NodeID
+		log.Printf("Registered stableID %s for peerID %s\n", hello.StableID, msg.NodeID)
 	}
 
 	writer := bufio.NewWriter(conn)
@@ -126,32 +113,15 @@ func handleNewNode(conn net.Conn, incomingTCP chan Message, e *types.Elevator, p
 		Type:   Msgwelcome,
 		NodeID: e.MyID,
 		MessageData: WelcomeMessage{
-			NodeID: msgNodeID,
+			NodeID: msg.NodeID,
 		},
 	}
 
-	jsonMsg, err := json.Marshal(welcome)
-	if err != nil {
-		log.Println("json marshal error in handleNewNode:", err)
-		//_ = conn.Close()
-		return
-	}
+	jsonMsg, _ := json.Marshal(welcome)
+	writer.WriteString(string(jsonMsg) + "\n")
+	writer.Flush()
 
-	_, err = writer.WriteString(string(jsonMsg) + "\n")
-	if err != nil {
-		log.Println("write welcome failed:", err)
-		//_ = conn.Close()
-		return
-	}
-
-	if err := writer.Flush(); err != nil {
-		log.Println("flush welcome failed:", err)
-		//_ = conn.Close()
-		return
-	}
-
-	handleRestoreCabOrders(ps, e, msgNodeID, hello.StableID)
-
+	handleRestoreCabOrders(ps, e, msg.NodeID, hello.StableID)
 	go readLoop(conn, incomingTCP)
 }
 
@@ -163,19 +133,16 @@ func ConnectToPrimary(ps *types.PeerState, port string, e *types.Elevator, incom
 		}
 
 		if ps.PrimaryConn != nil {
-			_ = ps.PrimaryConn.Close()
+			ps.PrimaryConn.Close()
 			ps.PrimaryConn = nil
 		}
 
-		primaryAddr := ps.PrimaryIP + ":" + port
-
-		conn, err := net.Dial("tcp", primaryAddr)
+		conn, err := net.Dial("tcp", ps.PrimaryIP+":"+port)
 		if err != nil {
 			log.Println("Error connecting to primary:", err)
 			time.Sleep(500 * time.Millisecond)
 			continue
 		}
-		log.Println("Connected to primary")
 
 		ps.PrimaryConn = conn
 		writer := bufio.NewWriter(conn)
@@ -189,56 +156,27 @@ func ConnectToPrimary(ps *types.PeerState, port string, e *types.Elevator, incom
 			},
 		}
 
-		jsonMsg, err := json.Marshal(hello)
-		if err != nil {
-			log.Println("json marshal error in ConnectToPrimary:", err)
-			_ = conn.Close()
-			ps.PrimaryConn = nil
-			return
-		}
-
-		_, err = writer.WriteString(string(jsonMsg) + "\n")
-		if err != nil {
-			log.Println("write hello failed:", err)
-			_ = conn.Close()
-			ps.PrimaryConn = nil
-			time.Sleep(500 * time.Millisecond)
-			continue
-		}
-
-		err = writer.Flush()
-		if err != nil {
-			log.Println("flush hello failed:", err)
-			_ = conn.Close()
-			ps.PrimaryConn = nil
-			time.Sleep(500 * time.Millisecond)
-			continue
-		}
+		jsonMsg, _ := json.Marshal(hello)
+		writer.WriteString(string(jsonMsg) + "\n")
+		writer.Flush()
 
 		go readLoop(conn, incomingTCP)
 		break
 	}
 }
+
 func SendTCP(receiverID string, message Message, ps *types.PeerState) {
 	var connNode net.Conn
 
-	jsonMessage, err := json.Marshal(message)
-	if err != nil {
-		log.Println("error in json conversion:", err)
-		return
-	}
+	jsonMessage, _ := json.Marshal(message)
 
 	if ps.Role == types.RolePrimary {
 		nodeConnMapMu.RLock()
 		conn, exists := nodeConnMap[receiverID]
 		nodeConnMapMu.RUnlock()
 
-		if !exists {
-			log.Println("No node in nodeConnMap:", receiverID)
-			return
-		}
-		if conn == nil {
-			log.Println("Connection is nil for receiver:", receiverID)
+		if !exists || conn == nil {
+			log.Println("Cannot send: connection not found for", receiverID)
 			return
 		}
 		connNode = conn
@@ -251,22 +189,15 @@ func SendTCP(receiverID string, message Message, ps *types.PeerState) {
 	}
 
 	writer := bufio.NewWriter(connNode)
-	_, err = writer.WriteString(string(jsonMessage) + "\n")
-	if err != nil {
-		log.Println("WriteString failed:", err)
-		return
-	}
-	if err := writer.Flush(); err != nil {
-		log.Println("Flush failed:", err)
-		return
-	}
+	writer.WriteString(string(jsonMessage) + "\n")
+	writer.Flush()
 }
 
 func HeartbeatTick(e *types.Elevator, ps *types.PeerState, d time.Duration, TCPHeartBeat chan<- Message) {
-	tic := time.NewTicker(d)
-	defer tic.Stop()
+	ticker := time.NewTicker(d)
+	defer ticker.Stop()
 
-	for range tic.C {
+	for range ticker.C {
 		if ps.Role == types.RolePrimary {
 			continue
 		}
@@ -298,12 +229,9 @@ func StartHeartbeatSender(ps *types.PeerState, heartbeatCh <-chan Message) {
 		}
 	}()
 }
-func handleRestoreCabOrders(ps *types.PeerState, e *types.Elevator, peerID string, stableID string) {
-	if ps.Role != types.RolePrimary {
-		return
-	}
 
-	if stableID == "" {
+func handleRestoreCabOrders(ps *types.PeerState, e *types.Elevator, peerID string, stableID string) {
+	if ps.Role != types.RolePrimary || stableID == "" {
 		return
 	}
 
