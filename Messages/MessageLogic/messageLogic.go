@@ -61,6 +61,7 @@ func OnMessageReceive(msg tcp.Message, ps *types.PeerState, e *types.Elevator, d
 		}
 
 	case tcp.MsgHeartbeat:
+		log.Println("får heartbeat")
 		bytes, err := json.Marshal(msg.MessageData)
 		if err != nil {
 			log.Println("Marshal MsgHeartbeat failed:", err)
