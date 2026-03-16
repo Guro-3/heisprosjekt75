@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	OrderTimeout = 5 * time.Second
+	OrderTimeout = 30 * time.Second
 	TickerPeriod = 500 * time.Millisecond
 )
 
