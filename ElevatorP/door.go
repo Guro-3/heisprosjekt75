@@ -7,14 +7,15 @@ import (
 )
 
 func onDoorOpen(doorStartTimerCh chan int, e *types.Elevator, ps *types.PeerState) {
-	prevDir := e.Dir
+	if elevio.GetFloor() == -1 {
+		return
+	}
 	e.State = types.DoorOpen
 
 	elevio.SetMotorDirection(elevio.MD_Stop)
 	elevio.SetDoorOpenLamp(true)
 
-	e.OrderDir = prevDir
-	clearAtCurrentFloor(e, prevDir, ps)
+	clearAtCurrentFloor(e, e.OrderDir, ps)
 
 	e.ClearedRevDir = shouldClearOppositeAtCurrentFloor(e)
 
@@ -31,10 +32,8 @@ func OnDoortimeout(doorStartTimerCh chan int, e *types.Elevator, ps *types.PeerS
 		switch e.OrderDir {
 		case elevio.MD_Up:
 			e.OrderDir = elevio.MD_Down
-			e.Dir = e.OrderDir
 		case elevio.MD_Down:
 			e.OrderDir = elevio.MD_Up
-			e.Dir = e.OrderDir
 		}
 
 		e.ClearedRevDir = false

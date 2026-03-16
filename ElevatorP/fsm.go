@@ -45,11 +45,11 @@ func StartAction(e *types.Elevator, doorStartTimerCh chan int, ps *types.PeerSta
 	/*if e.State != types.DoorOpen &&
 		elevio.GetFloor() != -1 &&
 		e.CurrentFloor == elevio.GetFloor() &&
-		(cabOrdersHere(e) || hallOrderUpHere(e) || hallOrderDownHere(e)) { 
-		onDoorOpen(doorStartTimerCh, e, ps) 
+		(cabOrdersHere(e) || hallOrderUpHere(e) || hallOrderDownHere(e)) {
+		onDoorOpen(doorStartTimerCh, e, ps)
 		return
 	}*/
-	
+
 	Dir, Nextstate := chooseDirection(e)
 
 	switch Nextstate {
@@ -66,18 +66,30 @@ func StartAction(e *types.Elevator, doorStartTimerCh chan int, ps *types.PeerSta
 }
 
 func ServiceOrderAtFloor(e *types.Elevator, newFloor int, doorStartTimerCh chan int, ps *types.PeerState) {
+
 	e.CurrentFloor = newFloor
 	FloorLight(e)
+
+	if e.Initializing {
+		elevio.SetMotorDirection(elevio.MD_Stop)
+		e.State = types.Idle
+		e.Dir = elevio.MD_Stop
+		e.Initializing = false
+		return
+	}
 
 	if e.State != types.Moving {
 		return
 	}
+
 	if shouldStop(e) {
+		setOrderDirAtStop(e)
 		onDoorOpen(doorStartTimerCh, e, ps)
 	}
 }
 
 func OnInitBetweenFloor(e *types.Elevator) {
+	e.Initializing = true
 	elevio.SetMotorDirection(elevio.MD_Down)
 	e.Dir = elevio.MD_Down
 	e.State = types.Moving

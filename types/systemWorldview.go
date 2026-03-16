@@ -14,6 +14,9 @@ type ElevatorStatus struct {
 var FullOrderMatrix [NumFloors][NumHallButtons]bool
 
 var WorldView = make(map[string]ElevatorStatus)
+var LostCabOrders = make(map[string][NumFloors]bool)
+var PeerIDToStableID = make(map[string]string)
+var StableIDToPeerID = make(map[string]string)
 
 type HAllAssignment [NumFloors][NumHallButtons]bool
 
@@ -72,6 +75,6 @@ func UpdateMyState(e *Elevator) {
 		Floor:       e.CurrentFloor,
 		Direction:   e.Dir,
 		State:       e.State,
-		CabRequests:cabs,
+		CabRequests: cabs,
 	}
 }

@@ -1,4 +1,3 @@
-
 package types
 
 import "heisprosjekt75/Driver-go/elevio"
@@ -26,7 +25,7 @@ const (
 
 const (
 	UpOrder StopCondition = iota
-	DownOrder 
+	DownOrder
 	CabOrder
 )
 
@@ -40,10 +39,11 @@ type Elevator struct {
 	Mode            ElevatorMode
 	Obstructed      bool
 	MyID            string
+	StableID        string
 	ElevIP          string
 	Ps              PeerState
 	StopCond        StopCondition
-	OrderDir		elevio.MotorDirection
+	OrderDir        elevio.MotorDirection
 	ClearedRevDir   bool
-
+	Initializing    bool
 }

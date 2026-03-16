@@ -1,28 +1,57 @@
 package RoleManager
 
 import (
+	"heisprosjekt75/ElevatorP"
 	"heisprosjekt75/Network-go/network/peers"
 	"heisprosjekt75/types"
-	"heisprosjekt75/ElevatorP"
 	"log"
 )
 
-func RoleElection(peers peers.PeerUpdate, e *types.Elevator, ps *types.PeerState, doorStartTimerCh chan int) {
-	ps.PrevRole = ps.Role
+func containsPeer(peerList []string, id string) bool {
+	for _, p := range peerList {
+		if p == id {
+			return true
+		}
+	}
+	return false
+}
 
-	if len(peers.Peers) == 1 {
-		ps.PrimaryID = e.MyID
-		e.Mode = types.SingleElevator
-		ElevatorP.SingleElevatorOrderRedelegation(e, doorStartTimerCh)
-		log.Println("Elevator mode: ", e.Mode)
-	} else {
-		ps.PrimaryID = peers.Peers[0]
-		e.Mode = types.PrimaryBackup
-		log.Println("Elevator mode: ", e.Mode)
+func RoleElection(peerUpdate peers.PeerUpdate, e *types.Elevator, ps *types.PeerState, doorStartTimerCh chan int) {
+	ps.PrevRole = ps.Role
+	peerList := peerUpdate.Peers
+
+	// Hvis kjent primary er mistet, rydd den bort
+	if ps.PrimaryID != "" && containsPeer(peerUpdate.Lost, ps.PrimaryID) {
+		if ps.PrimaryConn != nil {
+			_ = ps.PrimaryConn.Close()
+			ps.PrimaryConn = nil
+		}
+		ps.PrimaryID = ""
+		ps.PrimaryIP = ""
 	}
 
-	if len(peers.Peers) >= 2 {
-		ps.BackupID = peers.Peers[1]
+	if len(peerList) == 1 {
+		ps.PrimaryID = e.MyID
+		ps.BackupID = ""
+		e.Mode = types.SingleElevator
+		ElevatorP.SingleElevatorOrderRedelegation(e, doorStartTimerCh)
+		log.Println("Elevator mode:", e.Mode)
+	} else {
+		e.Mode = types.PrimaryBackup
+		log.Println("Elevator mode:", e.Mode)
+
+		// Behold eksisterende primary hvis den fortsatt finnes
+		if ps.PrimaryID == "" || !containsPeer(peerList, ps.PrimaryID) {
+			ps.PrimaryID = peerList[0]
+		}
+
+		ps.BackupID = ""
+		for _, id := range peerList {
+			if id != ps.PrimaryID {
+				ps.BackupID = id
+				break
+			}
+		}
 	}
 
 	switch e.MyID {
@@ -31,9 +60,9 @@ func RoleElection(peers peers.PeerUpdate, e *types.Elevator, ps *types.PeerState
 		log.Println("my role is Primary")
 	case ps.BackupID:
 		ps.Role = types.RoleBackup
-		log.Println("my role is backup")
+		log.Println("my role is Backup")
 	default:
 		ps.Role = types.RoleNode
-		log.Println("my role is none")
+		log.Println("my role is Node")
 	}
 }

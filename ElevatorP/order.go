@@ -84,69 +84,52 @@ func orderAbove(e *types.Elevator) bool {
 }
 
 func chooseDirection(e *types.Elevator) (elevio.MotorDirection, types.ElevatorState) {
-
 	switch e.Dir {
 
 	case elevio.MD_Up:
-		log.Println("Stop condition: ", e.StopCond)
 		if orderAbove(e) {
-			if cabOrdersBelow(e) && e.StopCond == types.DownOrder {
+			if cabOrdersBelow(e) && e.OrderDir == elevio.MD_Down {
 				return elevio.MD_Down, types.Moving
-			} else {
-				log.Println("chooseDir, MD_Up, OrderAbove()")
-				return elevio.MD_Up, types.Moving
 			}
-
+			return elevio.MD_Up, types.Moving
 		}
 
 		if orderBelow(e) {
-			if cabOrdersAbove(e) && e.StopCond == types.UpOrder {
+			if cabOrdersAbove(e) && e.OrderDir == elevio.MD_Up {
 				return elevio.MD_Up, types.Moving
-			} else {
-				log.Println("chooseDir, MD_Up, OrderBelow()")
-				return elevio.MD_Down, types.Moving
 			}
-
+			return elevio.MD_Down, types.Moving
 		}
-		log.Println("chooseDir, MD_Up, return MD_STOP")
+
 		return elevio.MD_Stop, types.Idle
 
 	case elevio.MD_Down:
-		log.Println("Stop condition: ", e.StopCond)
 		if orderBelow(e) {
-			if cabOrdersAbove(e) && e.StopCond == types.UpOrder {
+			if cabOrdersAbove(e) && e.OrderDir == elevio.MD_Up {
 				return elevio.MD_Up, types.Moving
-			} else {
-				log.Println("chooseDir, MD_Down, OrderBelow()")
-				return elevio.MD_Down, types.Moving
 			}
+			return elevio.MD_Down, types.Moving
 		}
+
 		if orderAbove(e) {
-			if cabOrdersBelow(e) && e.StopCond == types.DownOrder {
+			if cabOrdersBelow(e) && e.OrderDir == elevio.MD_Down {
 				return elevio.MD_Down, types.Moving
-			} else {
-				log.Println("chooseDir, MD_Down, OrderAbove()")
-				return elevio.MD_Up, types.Moving
 			}
+			return elevio.MD_Up, types.Moving
 		}
-		log.Println("chooseDir, MD_Down, return MD_STOP")
+
 		return elevio.MD_Stop, types.Idle
 
 	case elevio.MD_Stop:
-		log.Println("Stop condition: ", e.StopCond)
 		if orderAbove(e) {
-			log.Println("chooseDir, MD_Stop, OrderAbove()")
 			return elevio.MD_Up, types.Moving
 		}
 		if orderBelow(e) {
-			log.Println("chooseDir, MD_Stop, OrderBelow()")
 			return elevio.MD_Down, types.Moving
 		}
-		log.Println("chooseDir, MD_Stop, return MD_STOP")
 		return elevio.MD_Stop, types.Idle
 
 	default:
-		//
 		return elevio.MD_Stop, types.Idle
 	}
 }
@@ -167,18 +150,44 @@ func shouldStop(e *types.Elevator) bool {
 	}
 }
 
-func CheckStopCondition(e *types.Elevator) {
-	if hallOrderUpHere(e) {
-		e.StopCond = types.UpOrder
-	} else if hallOrderDownHere(e) {
-		e.StopCond = types.DownOrder
-	} else {
-		e.StopCond = types.CabOrder
+func setOrderDirAtStop(e *types.Elevator) {
+	switch e.Dir {
+
+	case elevio.MD_Up:
+		if hallOrderUpHere(e) {
+			e.OrderDir = elevio.MD_Up
+		} else if cabOrdersHere(e) {
+			e.OrderDir = elevio.MD_Up
+		} else if !orderAbove(e) && hallOrderDownHere(e) {
+			e.OrderDir = elevio.MD_Down
+		}
+
+	case elevio.MD_Down:
+		if hallOrderDownHere(e) {
+			e.OrderDir = elevio.MD_Down
+		} else if cabOrdersHere(e) {
+			e.OrderDir = elevio.MD_Down
+		} else if !orderBelow(e) && hallOrderUpHere(e) {
+			e.OrderDir = elevio.MD_Up
+		}
+
+	case elevio.MD_Stop:
+		if hallOrderUpHere(e) {
+			e.OrderDir = elevio.MD_Up
+		} else if hallOrderDownHere(e) {
+			e.OrderDir = elevio.MD_Down
+		} else {
+			e.OrderDir = elevio.MD_Stop
+		}
 	}
 }
 
 func shouldClearAtFloorImmediately(e *types.Elevator, btnFloor int, btnType elevio.ButtonType) bool {
-	return e.CurrentFloor == btnFloor &&
+	if elevio.GetFloor() == -1 {
+		return false
+	}
+
+	return elevio.GetFloor() == btnFloor &&
 		((e.Dir == elevio.MD_Up && btnType == elevio.BT_HallUp) ||
 			(e.Dir == elevio.MD_Down && btnType == elevio.BT_HallDown) ||
 			(e.Dir == elevio.MD_Stop) ||
@@ -282,79 +291,100 @@ func clearAtCurrentFloor(e *types.Elevator, prevDir elevio.MotorDirection, ps *t
 }*/
 
 func clearAtCurrentFloor(e *types.Elevator, prevDir elevio.MotorDirection, ps *types.PeerState) {
+
 	e.CabOrderMatrix[e.CurrentFloor] = false
 	TurnOffCabLight(e.CurrentFloor)
 
 	var btnCleared []elevio.ButtonEvent
 
-	log.Println("order direction:", e.OrderDir)
-	switch e.OrderDir {
+	switch prevDir {
+
 	case elevio.MD_Up:
+
 		if e.HallOrderMatrix[e.CurrentFloor][elevio.BT_HallUp] {
+
 			e.HallOrderMatrix[e.CurrentFloor][elevio.BT_HallUp] = false
+
 			if IsSingleElevatorMode(e) {
 				TurnOffHallLight(elevio.BT_HallUp, e.CurrentFloor)
 			}
-			log.Println("var en ordre ", elevio.MD_Up, " på floor :", e.CurrentFloor)
+
 			btnCleared = append(btnCleared, elevio.ButtonEvent{
 				Floor:  e.CurrentFloor,
 				Button: elevio.BT_HallUp,
 			})
 		}
+
 	case elevio.MD_Down:
+
 		if e.HallOrderMatrix[e.CurrentFloor][elevio.BT_HallDown] {
+
 			e.HallOrderMatrix[e.CurrentFloor][elevio.BT_HallDown] = false
+
 			if IsSingleElevatorMode(e) {
 				TurnOffHallLight(elevio.BT_HallDown, e.CurrentFloor)
 			}
-			log.Println("var en ordre ", elevio.MD_Down, " på floor :", e.CurrentFloor)
-			btnCleared = append(btnCleared, elevio.ButtonEvent{
-				Floor:  e.CurrentFloor,
-				Button: elevio.BT_HallDown,
-			})
-		}
-	case elevio.MD_Stop:
-		if e.HallOrderMatrix[e.CurrentFloor][elevio.BT_HallUp] {
-			e.HallOrderMatrix[e.CurrentFloor][elevio.BT_HallUp] = false
-			if IsSingleElevatorMode(e) {
-				TurnOffHallLight(elevio.BT_HallUp, e.CurrentFloor)
-			}
-			log.Println("var en ordre opp i ", elevio.MD_Stop, " på floor :", e.CurrentFloor)
-			btnCleared = append(btnCleared, elevio.ButtonEvent{
-				Floor:  e.CurrentFloor,
-				Button: elevio.BT_HallUp,
-			})
-		} else if e.HallOrderMatrix[e.CurrentFloor][elevio.BT_HallDown] {
-			e.HallOrderMatrix[e.CurrentFloor][elevio.BT_HallDown] = false
-			if IsSingleElevatorMode(e) {
-				TurnOffHallLight(elevio.BT_HallDown, e.CurrentFloor)
-			}
-			log.Println("var en ordre ned i ", elevio.MD_Stop, " på floor :", e.CurrentFloor)
+
 			btnCleared = append(btnCleared, elevio.ButtonEvent{
 				Floor:  e.CurrentFloor,
 				Button: elevio.BT_HallDown,
 			})
 		}
 
+	case elevio.MD_Stop:
+
+		if e.HallOrderMatrix[e.CurrentFloor][elevio.BT_HallUp] {
+
+			e.HallOrderMatrix[e.CurrentFloor][elevio.BT_HallUp] = false
+
+			if IsSingleElevatorMode(e) {
+				TurnOffHallLight(elevio.BT_HallUp, e.CurrentFloor)
+			}
+
+			btnCleared = append(btnCleared, elevio.ButtonEvent{
+				Floor:  e.CurrentFloor,
+				Button: elevio.BT_HallUp,
+			})
+
+		} else if e.HallOrderMatrix[e.CurrentFloor][elevio.BT_HallDown] {
+
+			e.HallOrderMatrix[e.CurrentFloor][elevio.BT_HallDown] = false
+
+			if IsSingleElevatorMode(e) {
+				TurnOffHallLight(elevio.BT_HallDown, e.CurrentFloor)
+			}
+
+			btnCleared = append(btnCleared, elevio.ButtonEvent{
+				Floor:  e.CurrentFloor,
+				Button: elevio.BT_HallDown,
+			})
+		}
 	}
+
 	if !IsSingleElevatorMode(e) {
 		for _, btn := range btnCleared {
 			messagecomplete.OrderCompleted(btn, e, ps)
 		}
 	}
-
 }
 
 func HandleAsignedOrder(e *types.Elevator, btnFloor int, btnButton elevio.ButtonType, doorStartTimerCh chan int, ps *types.PeerState) {
-	if e.HallOrderMatrix[btnFloor][btnButton] {
-		return
+	if !e.HallOrderMatrix[btnFloor][btnButton] {
+		log.Printf("Assigned order -> role:%v floor:%d button:%d\n", ps.Role, btnFloor, btnButton)
+		AddOrder(e, btnFloor, btnButton)
 	}
-	log.Printf("Assigned order -> role:%v floor:%d button:%d\n", ps.Role, btnFloor, btnButton)
-	AddOrder(e, btnFloor, btnButton)
 
 	if shouldClearAtFloorImmediately(e, btnFloor, btnButton) {
-		onDoorOpen(doorStartTimerCh, e, ps)
+		switch btnButton {
+		case elevio.BT_HallUp:
+			e.OrderDir = elevio.MD_Up
+		case elevio.BT_HallDown:
+			e.OrderDir = elevio.MD_Down
+		case elevio.BT_Cab:
+			e.OrderDir = e.Dir
+		}
 
+		onDoorOpen(doorStartTimerCh, e, ps)
 	} else {
 		StartAction(e, doorStartTimerCh, ps)
 	}
