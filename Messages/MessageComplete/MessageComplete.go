@@ -27,10 +27,10 @@ func OrderCompleted(btn elevio.ButtonEvent, e *types.Elevator, ps *types.PeerSta
 }
 
 func ApplyCompletedOrder(floor int, button elevio.ButtonType, e *types.Elevator, ps *types.PeerState) {
-	/*if !types.FullOrderMatrix[floor][button] {
+	if !types.FullOrderMatrix[floor][button] {
 		log.Printf("Ignoring duplicate completion for floor:%d button:%d", floor, button)
 		return
-	}*/
+	}
 
 	types.FullOrderMatrix[floor][button] = false
 
