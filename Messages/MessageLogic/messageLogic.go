@@ -61,7 +61,7 @@ func OnMessageReceive(msg tcp.Message, ps *types.PeerState, e *types.Elevator, d
 		}
 
 	case tcp.MsgHeartbeat:
-		log.Println("får heartbeat")
+
 		bytes, err := json.Marshal(msg.MessageData)
 		if err != nil {
 			log.Println("Marshal MsgHeartbeat failed:", err)
@@ -83,7 +83,6 @@ func OnMessageReceive(msg tcp.Message, ps *types.PeerState, e *types.Elevator, d
 				CabRequests: heartBeat.CabRequests,
 			}
 			types.UpdateMyState(e)
-			log.Println("print worlwiew,", types.WorldView)
 
 			if heartBeat.StableID != "" {
 				types.PeerIDToStableID[msg.NodeID] = heartBeat.StableID

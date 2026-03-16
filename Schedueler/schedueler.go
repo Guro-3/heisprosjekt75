@@ -113,7 +113,6 @@ func MasterSchedueler(e *types.Elevator, ps *types.PeerState, doorStartTimerCh c
 		HallRequests: hallRequests,
 		States:       types.WorldViewToJSON(types.WorldView),
 	}
-	log.Println("world state:", input.States)
 
 	jsonBytes, err := json.Marshal(input)
 	if err != nil {
