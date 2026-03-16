@@ -369,10 +369,9 @@ func clearAtCurrentFloor(e *types.Elevator, prevDir elevio.MotorDirection, ps *t
 }
 
 func HandleAsignedOrder(e *types.Elevator, btnFloor int, btnButton elevio.ButtonType, doorStartTimerCh chan int, ps *types.PeerState) {
-	if !e.HallOrderMatrix[btnFloor][btnButton] {
-		log.Printf("Assigned order -> role:%v floor:%d button:%d\n", ps.Role, btnFloor, btnButton)
-		AddOrder(e, btnFloor, btnButton)
-	}
+
+	log.Printf("Assigned order -> role:%v floor:%d button:%d\n", ps.Role, btnFloor, btnButton)
+	AddOrder(e, btnFloor, btnButton)
 
 	if shouldClearAtFloorImmediately(e, btnFloor, btnButton) {
 		switch btnButton {
