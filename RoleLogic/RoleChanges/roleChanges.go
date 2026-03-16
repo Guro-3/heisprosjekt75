@@ -7,6 +7,10 @@ import (
 
 func RolesSwitched(ps *types.PeerState, port string, incomingTCP chan tcp.Message, e *types.Elevator) {
 	if ps.Role == types.RolePrimary {
+		if ps.PrimaryConn != nil {
+			ps.PrimaryConn.Close()
+		}
+
 		tcp.StartPrimaryTCP(ps, port, incomingTCP, e)
 	} else {
 		go tcp.ConnectToPrimary(ps, port, e, incomingTCP)
