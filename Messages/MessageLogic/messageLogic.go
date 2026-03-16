@@ -52,8 +52,6 @@ func OnMessageReceive(msg tcp.Message, ps *types.PeerState, e *types.Elevator, d
 			return
 		}
 
-	
-
 		switch ps.Role {
 		case types.RolePrimary:
 			messagecomplete.ApplyCompletedOrder(orderComplete.Floor, orderComplete.Button, e, ps)

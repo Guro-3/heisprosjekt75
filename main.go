@@ -99,7 +99,7 @@ func main() {
 				ps.PrevRole = ps.Role
 
 				if ps.Role != types.RolePrimary {
-					go tcp.HeartbeatTick(e, ps, 1*time.Second, TCPHeartbeatCh)
+					go tcp.HeartbeatTick(e, ps, 300*time.Millisecond, TCPHeartbeatCh)
 					log.Println("entred by stableID:", e.StableID)
 				} else {
 					go sendmessages.SnapshotTick(e, ps, 200*time.Millisecond)
