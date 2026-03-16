@@ -69,7 +69,7 @@ func StartPrimaryTCP(ps *types.PeerState, port string, incomingTCP chan Message,
 }
 
 func handleNewNode(conn net.Conn, incomingTCP chan Message, e *types.Elevator, ps *types.PeerState) {
-	defer conn.Close()
+	
 
 	reader := bufio.NewReader(conn)
 	line, err := reader.ReadString('\n')
