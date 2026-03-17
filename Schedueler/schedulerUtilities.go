@@ -1,13 +1,13 @@
 package schedueler
 
-import(
-	"heisprosjekt75/Network-go/network/tcp"
-	"heisprosjekt75/Messages/MessageTypes"
-	"heisprosjekt75/Driver-go/elevio"
-	"heisprosjekt75/types"
+import (
 	"encoding/json"
-	"os/exec"
+	"heisprosjekt75/Driver-go/elevio"
+	"heisprosjekt75/Messages/MessageTypes"
+	"heisprosjekt75/Network/tcp"
+	"heisprosjekt75/types"
 	"log"
+	"os/exec"
 )
 
 func hallAssignmentConvert(matrix [][types.NumHallButtons]bool) types.HallAssignment {
@@ -22,8 +22,6 @@ func hallAssignmentConvert(matrix [][types.NumHallButtons]bool) types.HallAssign
 	}
 	return out
 }
-
-
 
 func assignHallRequests(input []byte) (map[string][][types.NumHallButtons]bool, error) {
 	cmd := exec.Command("./cost_fns/hall_request_assigner/hall_request_assigner", "-i", string(input))
@@ -43,9 +41,6 @@ func assignHallRequests(input []byte) (map[string][][types.NumHallButtons]bool, 
 	return result, nil
 }
 
-
-
-
 func delegateOrders(receiverID string, e *types.Elevator, btn elevio.ButtonEvent) {
 	messageData := messagestypes.HallOrderMessage{Floor: btn.Floor, Button: btn.Button}
 	buttonMessage := messagestypes.Message{
@@ -53,12 +48,9 @@ func delegateOrders(receiverID string, e *types.Elevator, btn elevio.ButtonEvent
 		NodeID:      e.MyID,
 		MessageData: messageData,
 	}
-	
+
 	tcp.SendTCP(receiverID, buttonMessage, &e.Ps)
 }
-
-
-
 
 func chooseOwner(floor int, button int, proposedAssignment map[string]types.HallAssignment, finalAssignment map[string]types.HallAssignment) string {
 	owner := ""
@@ -91,4 +83,22 @@ func chooseOwner(floor int, button int, proposedAssignment map[string]types.Hall
 		}
 	}
 	return owner
+}
+
+func releaseSpecificHallOrder(floor int, button int) {
+	for peerID, orderMatrix := range types.CurrentAssignment {
+		if orderMatrix[floor][button] {
+			orderMatrix[floor][button] = false
+			types.CurrentAssignment[peerID] = orderMatrix
+		}
+	}
+}
+
+func getOwnerOfHallOrder(floor int, button int) string {
+	for peerID, orderMatrix := range types.CurrentAssignment {
+		if orderMatrix[floor][button] {
+			return peerID
+		}
+	}
+	return ""
 }

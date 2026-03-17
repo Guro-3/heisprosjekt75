@@ -3,7 +3,7 @@ package tcp
 import (
 	"bufio"
 	"encoding/json"
-	messagestypes "heisprosjekt75/Messages/MessageTypes"
+	"heisprosjekt75/Messages/MessageTypes"
 	"heisprosjekt75/types"
 	"io"
 	"log"
@@ -17,8 +17,6 @@ var (
 	nodeConnMap   = make(map[string]net.Conn)
 	nodeConnMapMu sync.RWMutex
 )
-
-
 
 func tcpReadLoop(conn net.Conn, incomingTCP chan messagestypes.Message) {
 	defer conn.Close()
@@ -108,7 +106,6 @@ func tcpHandleNewNode(conn net.Conn, incomingTCP chan messagestypes.Message, e *
 	if hello.StableID != "" {
 		types.PeerIDToStableID[msg.NodeID] = hello.StableID
 		types.StableIDToPeerID[hello.StableID] = msg.NodeID
-		log.Printf("Registered stableID %s for peerID %s\n", hello.StableID, msg.NodeID)
 	}
 
 	writer := bufio.NewWriter(conn)

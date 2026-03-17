@@ -34,14 +34,14 @@ func LightInit() {
 	}
 }
 
-func SyncHallLight(e *types.Elevator, worldView map[string]types.ElevatorStatus){
-	for f:= 0; f < types.NumFloors; f++ {
-		for b:= 0; b < types.NumHallButtons; b++{
-			btn:= elevio.ButtonEvent{
-				Floor: f,
+func SyncHallLight(e *types.Elevator, worldView map[string]types.ElevatorStatus) {
+	for f := 0; f < types.NumFloors; f++ {
+		for b := 0; b < types.NumHallButtons; b++ {
+			btn := elevio.ButtonEvent{
+				Floor:  f,
 				Button: elevio.ButtonType(b),
 			}
-			if types.FullOrderMatrix[f][b]{
+			if types.FullOrderMatrix[f][b] {
 				SetHallLight(btn.Button, btn.Floor)
 				sendmessages.SendHallLightOn(e, btn, worldView)
 			} else {

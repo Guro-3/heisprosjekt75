@@ -1,8 +1,8 @@
 package rolemanager
 
 import (
-	messagestypes "heisprosjekt75/Messages/MessageTypes"
-	"heisprosjekt75/Network-go/network/tcp"
+	"heisprosjekt75/Messages/MessageTypes"
+	"heisprosjekt75/Network/tcp"
 	"heisprosjekt75/types"
 )
 

@@ -2,7 +2,7 @@ package rolemanager
 
 import (
 	"heisprosjekt75/Elevator"
-	"heisprosjekt75/Network-go/network/peers"
+	"heisprosjekt75/Network/peers"
 	"heisprosjekt75/types"
 	"log"
 )

@@ -4,7 +4,6 @@ import (
 	"heisprosjekt75/Driver-go/elevio"
 	"heisprosjekt75/Messages/MessageComplete"
 	"heisprosjekt75/types"
-	"log"
 )
 
 func AddOrder(e *types.Elevator, btnFloor int, btnType elevio.ButtonType) {
@@ -25,8 +24,6 @@ func AddOrder(e *types.Elevator, btnFloor int, btnType elevio.ButtonType) {
 	}
 }
 
-
-
 func shouldClearOrderAtFloorImmediately(e *types.Elevator, btnFloor int, btnType elevio.ButtonType) bool {
 	if elevio.GetFloor() == -1 {
 		return false
@@ -38,9 +35,6 @@ func shouldClearOrderAtFloorImmediately(e *types.Elevator, btnFloor int, btnType
 			(e.Dir == elevio.MD_Stop) ||
 			(btnType == elevio.BT_Cab))
 }
-
-
-
 
 func clearOrderAtCurrentFloor(e *types.Elevator, prevDir elevio.MotorDirection) {
 	e.CabOrderMatrix[e.CurrentFloor] = false
@@ -108,7 +102,6 @@ func clearOrderAtCurrentFloor(e *types.Elevator, prevDir elevio.MotorDirection) 
 	}
 }
 
-
 func clearOppositeOrderAtCurrentFloor(e *types.Elevator) {
 	var btnType elevio.ButtonType
 	var exist bool
@@ -139,9 +132,6 @@ func clearOppositeOrderAtCurrentFloor(e *types.Elevator) {
 	}
 }
 
-
-
-
 func HandleAssignedOrder(e *types.Elevator, btnFloor int, btnType elevio.ButtonType, doorStartTimerCh chan int) {
 	AddOrder(e, btnFloor, btnType)
 
@@ -161,19 +151,12 @@ func HandleAssignedOrder(e *types.Elevator, btnFloor int, btnType elevio.ButtonT
 	}
 }
 
-
-
-
 func SingleElevatorOrderRedelegation(e *types.Elevator, doorStartTimerCh chan int) {
-	log.Println("Vi skal nå sjekke gjennom ordrelista")
 	for f := 0; f < types.NumFloors; f++ {
 		for b := 0; b < types.NumHallButtons; b++ {
 			if types.FullOrderMatrix[f][b] {
 				AddOrder(e, f, elevio.ButtonType(b))
 				FsmStartAction(e, doorStartTimerCh)
-				log.Println("Det finnes ordre på etg: ", f)
-			} else {
-				log.Println("Det finnes ingen ordre i etg: ", f)
 			}
 		}
 	}

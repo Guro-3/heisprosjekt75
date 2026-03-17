@@ -10,6 +10,7 @@ import (
 	"heisprosjekt75/Schedueler"
 	"heisprosjekt75/types"
 	"log"
+	"time"
 )
 
 func OnMessageReceive(msg messagestypes.Message, e *types.Elevator, doorStartTimerCh chan int) {
@@ -24,6 +25,10 @@ func OnMessageReceive(msg messagestypes.Message, e *types.Elevator, doorStartTim
 		case types.RolePrimary:
 			if !types.FullOrderMatrix[order.Floor][order.Button] {
 				types.FullOrderMatrix[order.Floor][order.Button] = true
+
+				if types.HallOrderTimes[order.Floor][order.Button].IsZero() {
+					types.HallOrderTimes[order.Floor][order.Button] = time.Now()
+				}
 			}
 
 		default:
@@ -133,7 +138,7 @@ func OnMessageReceive(msg messagestypes.Message, e *types.Elevator, doorStartTim
 		case types.RolePrimary:
 			if hallOrderACK.Ack {
 				Elevator.SyncHallLight(e, types.WorldView)
-				schedueler.PrimarySchedueler(e, doorStartTimerCh)
+				schedueler.PrimarySchedueler(e, doorStartTimerCh, -1, -1, "")
 			}
 
 		default:
@@ -163,7 +168,6 @@ func OnMessageReceive(msg messagestypes.Message, e *types.Elevator, doorStartTim
 			return
 		}
 
-
 		btn := elevio.ButtonEvent{
 			Floor:  turnOffHallLightMsg.Floor,
 			Button: elevio.ButtonType(turnOffHallLightMsg.Button),
@@ -172,4 +176,3 @@ func OnMessageReceive(msg messagestypes.Message, e *types.Elevator, doorStartTim
 		Elevator.TurnOffHallLight(btn.Button, btn.Floor)
 	}
 }
-

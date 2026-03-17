@@ -6,12 +6,10 @@ import (
 	"heisprosjekt75/Elevator"
 	"heisprosjekt75/types"
 	"log"
+	"time"
 )
 
-
-
-
-func PrimarySchedueler(e *types.Elevator, doorStartTimerCh chan int) {
+func PrimarySchedueler(e *types.Elevator, doorStartTimerCh chan int, excludeFloor int, excludeButton int, excludePeer string) {
 	types.TypesUpdateMyState(e)
 
 	hallRequests := make([][types.NumHallButtons]bool, types.NumFloors)
@@ -59,6 +57,22 @@ func PrimarySchedueler(e *types.Elevator, doorStartTimerCh chan int) {
 				continue
 			}
 			owner := chooseOwner(f, b, proposedAssignment, finalAssignment)
+
+			if f == excludeFloor && b == excludeButton && owner == excludePeer {
+				altOwner := ""
+				for id, matrix := range proposedAssignment {
+					if id == excludePeer {
+						continue
+					}
+					if matrix[f][b] {
+						altOwner = id
+						break
+					}
+				}
+				if altOwner != "" {
+					owner = altOwner
+				}
+			}
 			if owner != "" {
 				order := finalAssignment[owner]
 				order[f][b] = true
@@ -86,4 +100,45 @@ func PrimarySchedueler(e *types.Elevator, doorStartTimerCh chan int) {
 		}
 	}
 	types.CurrentAssignment = finalAssignment
+}
+
+func PrimaryMonitorTick(e *types.Elevator, doorStartTimerCh chan int, d time.Duration) {
+	ticker := time.NewTicker(d)
+	defer ticker.Stop()
+	var releaseFloor int
+	var releaseButton int
+
+	for range ticker.C {
+		if e.Ps.Role != types.RolePrimary {
+			continue
+		}
+		needsReschedule := false
+		maxOrderAge := 10 * time.Second
+
+		for f := 0; f < types.NumFloors; f++ {
+			for b := 0; b < types.NumHallButtons; b++ {
+				if !types.FullOrderMatrix[f][b] {
+					continue
+				}
+
+				t := types.HallOrderTimes[f][b]
+				if t.IsZero() {
+					types.HallOrderTimes[f][b] = time.Now()
+					continue
+				}
+
+				if time.Since(t) > maxOrderAge {
+					releaseButton = b
+					releaseFloor = f
+
+					needsReschedule = true
+				}
+			}
+		}
+		if needsReschedule {
+			oldOwner := getOwnerOfHallOrder(releaseFloor, releaseButton)
+			releaseSpecificHallOrder(releaseFloor, releaseButton)
+			PrimarySchedueler(e, doorStartTimerCh, releaseFloor, releaseButton, oldOwner)
+		}
+	}
 }

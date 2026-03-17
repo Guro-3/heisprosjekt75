@@ -4,13 +4,14 @@ import (
 	"flag"
 	"heisprosjekt75/Driver-go/elevio"
 	"heisprosjekt75/Elevator"
-	mainutilities "heisprosjekt75/MainUtilities"
-	messagelogic "heisprosjekt75/Messages/MessageHandling"
-	messagestypes "heisprosjekt75/Messages/MessageTypes"
-	"heisprosjekt75/Network-go/network"
-	sendworldview "heisprosjekt75/Network-go/network/SendWorldView"
-	"heisprosjekt75/Network-go/network/bcast"
-	"heisprosjekt75/Network-go/network/localip"
+	"heisprosjekt75/MainUtilities"
+	"heisprosjekt75/Messages/MessageHandling"
+	"heisprosjekt75/Messages/MessageTypes"
+	"heisprosjekt75/Network"
+	"heisprosjekt75/Network/SendWorldView"
+	"heisprosjekt75/Network/bcast"
+	"heisprosjekt75/Network/localip"
+	"heisprosjekt75/Schedueler"
 	"log"
 	"time"
 )
@@ -58,6 +59,7 @@ func main() {
 	go Elevator.DoorTimeManager(e, doorTimeoutCh, doorStartTimerCh)
 	go elevio.PollObstructionSwitch(obstructionBtnCh)
 	go Elevator.DoorObstruction(obstructionBtnCh, e, doorStartTimerCh)
+	go schedueler.PrimaryMonitorTick(e, doorStartTimerCh, d)
 
 	sendworldview.StartWorldViewSender(&e.Ps, TCPWorldViewCh)
 

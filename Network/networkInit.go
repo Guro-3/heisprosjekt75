@@ -2,8 +2,8 @@ package network
 
 import (
 	"fmt"
-	"heisprosjekt75/Network-go/network/localip"
-	"heisprosjekt75/Network-go/network/peers"
+	"heisprosjekt75/Network/localip"
+	"heisprosjekt75/Network/peers"
 	"time"
 )
 

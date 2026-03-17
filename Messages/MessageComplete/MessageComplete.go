@@ -4,9 +4,10 @@ import (
 	"heisprosjekt75/Driver-go/elevio"
 	"heisprosjekt75/Messages/MessageTypes"
 	"heisprosjekt75/Messages/SendMessages"
-	"heisprosjekt75/Network-go/network/tcp"
+	"heisprosjekt75/Network/tcp"
 	"heisprosjekt75/types"
 	"log"
+	"time"
 )
 
 func OrderCompleted(btn elevio.ButtonEvent, e *types.Elevator) {
@@ -19,22 +20,18 @@ func OrderCompleted(btn elevio.ButtonEvent, e *types.Elevator) {
 			return
 		}
 		tcp.SendTCP(e.Ps.PrimaryID, buttonMessage, &e.Ps)
-		log.Printf("Completed order at floor:%d button:%d", btn.Floor, btn.Button)
 		return
 	}
 	ApplyCompletedOrder(btn.Floor, btn.Button, e)
 }
 
-
-
 func ApplyCompletedOrder(floor int, button elevio.ButtonType, e *types.Elevator) {
 	types.FullOrderMatrix[floor][button] = false
+	types.HallOrderTimes[floor][button] = time.Time{}
 
 	for id, matrix := range types.CurrentAssignment {
 		matrix[floor][button] = false
 		types.CurrentAssignment[id] = matrix
 	}
-
-	log.Printf("FullOrderMatrix CLEAR -> floor:%d button:%d", floor, button)
 	sendmessages.SendSnapshot(e, types.FullOrderMatrix)
 }

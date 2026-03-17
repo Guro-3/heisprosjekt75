@@ -51,13 +51,15 @@ func DoorObstruction(obstructionBtnCh chan bool, e *types.Elevator, doorStartTim
 
 		if obstruction {
 			e.Obstructed = true
-			if e.State == types.DoorOpen || e.State == types.Idle {
+			if e.State == types.DoorOpen {
 				elevio.SetMotorDirection(elevio.MD_Stop)
 				elevio.SetDoorOpenLamp(true)
 			}
 		} else {
 			e.Obstructed = false
 			if e.State == types.DoorOpen {
+				elevio.SetMotorDirection(elevio.MD_Stop)
+				elevio.SetDoorOpenLamp(true)
 				doorStartTimerCh <- types.TimeDoorOpenDuration
 			}
 		}

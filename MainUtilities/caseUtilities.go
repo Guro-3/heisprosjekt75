@@ -3,14 +3,14 @@ package mainutilities
 import (
 	"heisprosjekt75/Driver-go/elevio"
 	"heisprosjekt75/Elevator"
-	messages "heisprosjekt75/Messages"
-	messagestypes "heisprosjekt75/Messages/MessageTypes"
-	sendmessages "heisprosjekt75/Messages/SendMessages"
-	sendworldview "heisprosjekt75/Network-go/network/SendWorldView"
-	"heisprosjekt75/Network-go/network/peers"
-	"heisprosjekt75/Network-go/network/tcp"
-	rolemanager "heisprosjekt75/RoleManager"
-	schedueler "heisprosjekt75/Schedueler"
+	"heisprosjekt75/Messages"
+	"heisprosjekt75/Messages/MessageTypes"
+	"heisprosjekt75/Messages/SendMessages"
+	"heisprosjekt75/Network/SendWorldView"
+	"heisprosjekt75/Network/peers"
+	"heisprosjekt75/Network/tcp"
+	"heisprosjekt75/RoleManager"
+	"heisprosjekt75/Schedueler"
 	"heisprosjekt75/types"
 	"time"
 )
@@ -21,15 +21,6 @@ func CaseReceiveBtnCh(btn elevio.ButtonEvent, e *types.Elevator, doorStartTimerC
 	} else {
 		sendmessages.ButtonTransmitLogic(e, btn)
 	}
-}
-
-func contains(slice []string, s string) bool {
-	for _, v := range slice {
-		if v == s {
-			return true
-		}
-	}
-	return false
 }
 
 func CasePeerUpdateCh(e *types.Elevator, doorStartTimerCh chan int, TCPPort string, TCPRx chan messagestypes.Message, p peers.PeerUpdate, TCPWorldViewCh chan<- messagestypes.Message) {
@@ -51,7 +42,7 @@ func CasePeerUpdateCh(e *types.Elevator, doorStartTimerCh chan int, TCPPort stri
 	tcp.HandleLostPeers(p.Lost, e, doorStartTimerCh, p.Peers)
 
 	if len(p.Lost) > 0 && e.Ps.Role == types.RolePrimary && len(p.Peers) > 1 {
-		schedueler.PrimarySchedueler(e, doorStartTimerCh)
+		schedueler.PrimarySchedueler(e, doorStartTimerCh, -1, -1, "")
 	}
 }
 

@@ -3,8 +3,9 @@ package sendmessages
 import (
 	"heisprosjekt75/Driver-go/elevio"
 	"heisprosjekt75/Messages/MessageTypes"
-	"heisprosjekt75/Network-go/network/tcp"
+	"heisprosjekt75/Network/tcp"
 	"heisprosjekt75/types"
+	"time"
 )
 
 func SendSnapshot(e *types.Elevator, hallOrderMatrix [types.NumFloors][types.NumHallButtons]bool) {
@@ -15,8 +16,6 @@ func SendSnapshot(e *types.Elevator, hallOrderMatrix [types.NumFloors][types.Num
 	buttonMessage := messagestypes.Message{Type: messagestypes.MsgSnapshot, NodeID: e.MyID, MessageData: messageData}
 	tcp.SendTCP(e.Ps.BackupID, buttonMessage, &e.Ps)
 }
-
-
 
 func SendStateSnapshot(e *types.Elevator) {
 	if e.Ps.BackupID == "" {
@@ -67,8 +66,6 @@ func SendStateSnapshot(e *types.Elevator) {
 	tcp.SendTCP(e.Ps.BackupID, buttonMessage, &e.Ps)
 }
 
-
-
 func SendBackupHallOrderACK(e *types.Elevator) {
 	messageData := messagestypes.BackupHallOrderACK{Ack: true}
 	buttonMessage := messagestypes.Message{Type: messagestypes.MsgBackupHallOrderACK, NodeID: e.MyID, MessageData: messageData}
@@ -84,12 +81,14 @@ func ButtonTransmitLogic(e *types.Elevator, btn elevio.ButtonEvent) {
 	} else {
 		if !types.FullOrderMatrix[btn.Floor][btn.Button] {
 			types.FullOrderMatrix[btn.Floor][btn.Button] = true
+
+			if types.HallOrderTimes[btn.Floor][btn.Button].IsZero() {
+				types.HallOrderTimes[btn.Floor][btn.Button] = time.Now()
+			}
 			SendStateSnapshot(e)
 		}
 	}
 }
-
-
 
 func SendRestoreCabOrders(e *types.Elevator, targetPeerID string, cabs [types.NumFloors]bool) {
 	messageData := messagestypes.RestoreCabOrdersMessage{
@@ -106,8 +105,6 @@ func SendRestoreCabOrders(e *types.Elevator, targetPeerID string, cabs [types.Nu
 	tcp.SendTCP(targetPeerID, buttonMessage, &e.Ps)
 }
 
-
-
 func SendHallLightOn(e *types.Elevator, btn elevio.ButtonEvent, world map[string]types.ElevatorStatus) {
 	messageData := messagestypes.HallLightsOnMessage{Floor: btn.Floor, Button: btn.Button}
 	buttonMessage := messagestypes.Message{Type: messagestypes.MsgSetHallLights, NodeID: e.MyID, MessageData: messageData}
@@ -118,8 +115,6 @@ func SendHallLightOn(e *types.Elevator, btn elevio.ButtonEvent, world map[string
 		}
 	}
 }
-
-
 
 func SendHallLightOff(e *types.Elevator, btn elevio.ButtonEvent, world map[string]types.ElevatorStatus) {
 	messageData := messagestypes.HallLightsOffMessage{Floor: btn.Floor, Button: btn.Button}
