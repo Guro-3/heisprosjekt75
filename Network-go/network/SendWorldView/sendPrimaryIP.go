@@ -1,22 +1,22 @@
-package PrimaryHeartbeat
+package sendworldview
 
 import (
 	"heisprosjekt75/types"
 	"time"
 )
 
-type PrimHeartbeat struct {
+type PrimaryIPID struct {
 	PrimaryID      string
 	PrimaryAddrTCP string
 }
 
-func SendPrimaryIpId(UDPHeartBeatTx chan PrimHeartbeat, d time.Duration, e *types.Elevator) {
+func SendPrimaryIpId(UDPPrimaryIPIDTx chan PrimaryIPID, d time.Duration, e *types.Elevator) {
 	tic := time.NewTicker(d)
 	defer tic.Stop()
 
 	for range tic.C {
 		if e.Ps.Role == types.RolePrimary {
-			UDPHeartBeatTx <- PrimHeartbeat{e.MyID, e.ElevIP}
+			UDPPrimaryIPIDTx <- PrimaryIPID{e.MyID, e.ElevIP}
 		}
 	}
 }

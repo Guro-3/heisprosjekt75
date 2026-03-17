@@ -8,7 +8,7 @@ import (
 type MsgType int
 
 const (
-	MsgHeartbeat MsgType = iota
+	MsgWorldView MsgType = iota
 	MsgSnapshot
 	MsgHallOrder
 	MsgCompletedOrder
@@ -27,7 +27,7 @@ type Message struct {
 	MessageData interface{} `json:"messageData"`
 }
 
-type HeartbeatMessage struct {
+type WorldViewMessage struct {
 	CurrentFloor int                   `json:"currentFloor"`
 	State        types.ElevatorState   `json:"state"`
 	Dir          elevio.MotorDirection `json:"direction"`

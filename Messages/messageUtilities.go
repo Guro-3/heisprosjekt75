@@ -20,18 +20,18 @@ func DecodeMessage[T any](data interface{}) (T, error) {
 	return result, err
 }
 
-func UpdateWorldView(msg messagestypes.Message, heartBeat messagestypes.HeartbeatMessage, e *types.Elevator){
+func UpdateWorldView(msg messagestypes.Message, worldView messagestypes.WorldViewMessage, e *types.Elevator){
 	types.WorldView[msg.NodeID] = types.ElevatorStatus{
-				Floor:       heartBeat.CurrentFloor,
-				Direction:   heartBeat.Dir,
-				State:       heartBeat.State,
-				CabRequests: heartBeat.CabRequests,
+				Floor:       worldView.CurrentFloor,
+				Direction:   worldView.Dir,
+				State:       worldView.State,
+				CabRequests: worldView.CabRequests,
 			}
-			types.UpdateMyState(e)
+			types.TypesUpdateMyState(e)
 
-			if heartBeat.StableID != "" {
-				types.PeerIDToStableID[msg.NodeID] = heartBeat.StableID
-				types.StableIDToPeerID[heartBeat.StableID] = msg.NodeID
+			if worldView.StableID != "" {
+				types.PeerIDToStableID[msg.NodeID] = worldView.StableID
+				types.StableIDToPeerID[worldView.StableID] = msg.NodeID
 
 				types.PeerIDToStableID[e.MyID] = e.StableID
 				types.StableIDToPeerID[e.StableID] = e.MyID

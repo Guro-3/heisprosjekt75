@@ -1,4 +1,4 @@
-package RoleManager
+package rolemanager
 
 import (
 	"heisprosjekt75/Elevator"
@@ -19,11 +19,8 @@ func RoleElection(peerUpdate peers.PeerUpdate, e *types.Elevator, doorStartTimer
 		e.Ps.BackupID = ""
 		e.Mode = types.SingleElevator
 		Elevator.SingleElevatorOrderRedelegation(e, doorStartTimerCh)
-		log.Println("Elevator mode:", e.Mode)
 	} else {
 		e.Mode = types.PrimaryBackup
-		log.Println("Elevator mode:", e.Mode)
-
 		e.Ps.PrimaryID = peerList[0]
 		e.Ps.BackupID = peerList[1]
 	}

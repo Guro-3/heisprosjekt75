@@ -45,18 +45,18 @@ func OnMessageReceive(msg messagestypes.Message, e *types.Elevator, doorStartTim
 			log.Println("Error: Wrong elevator got MsgCompletedOrder")
 		}
 
-	case messagestypes.MsgHeartbeat:
-		heartBeat, err := messages.DecodeMessage[messagestypes.HeartbeatMessage](msg.MessageData)
+	case messagestypes.MsgWorldView:
+		worldView, err := messages.DecodeMessage[messagestypes.WorldViewMessage](msg.MessageData)
 		if err != nil {
-			log.Println("Decode MsgHeartbeat failed:", err)
+			log.Println("Decode MsgWorldView failed:", err)
 			return
 		}
 
 		switch e.Ps.Role {
 		case types.RolePrimary:
-			messages.UpdateWorldView(msg, heartBeat, e)
+			messages.UpdateWorldView(msg, worldView, e)
 		default:
-			log.Println("Error: Wrong elevator got HeartbeatMessage")
+			log.Println("Error: Wrong elevator got WorldViewMessage")
 		}
 
 	case messagestypes.MsgSnapshot:
