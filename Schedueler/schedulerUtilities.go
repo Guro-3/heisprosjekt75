@@ -46,7 +46,7 @@ func assignHallRequests(input []byte) (map[string][][types.NumHallButtons]bool, 
 
 
 
-func delegateOrders(receiverID string, e *types.Elevator, btn elevio.ButtonEvent, world map[string]types.ElevatorStatus) {
+func delegateOrders(receiverID string, e *types.Elevator, btn elevio.ButtonEvent) {
 	messageData := messagestypes.HallOrderMessage{Floor: btn.Floor, Button: btn.Button}
 	buttonMessage := messagestypes.Message{
 		Type:        messagestypes.MsgHallOrder,

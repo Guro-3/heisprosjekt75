@@ -15,9 +15,9 @@ type PeerUpdate struct {
 
 const (
 	interval  = 50 * time.Millisecond
-	timeout   = 500 * time.Millisecond
-	mcastIP   = "224.0.0.1" 
-	mcastPort = 10334       
+	timeout   = 2000 * time.Millisecond
+	mcastIP   = "224.0.0.1"
+	mcastPort = 10334
 )
 
 func Transmitter(id string, transmitEnable <-chan bool) {
@@ -105,7 +105,7 @@ func Receiver(myId string, peerUpdateCh chan<- PeerUpdate) {
 		}
 
 		lastSeen[peerId] = time.Now()
-		
+
 		p.Lost = nil
 		for k, t := range lastSeen {
 			if time.Since(t) > timeout {

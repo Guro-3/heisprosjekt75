@@ -12,12 +12,11 @@ const (
 )
 
 type PeerState struct {
-	Role        ElevatorRole
-	PrevRole    ElevatorRole
-	PrimaryID   string
-	PrimaryConn net.Conn
-	PrimaryIP   string
-	BackupID    string
+	Role            ElevatorRole
+	PrevRole        ElevatorRole
+	PrimaryID       string
+	PrimaryConn     net.Conn
+	PrimaryListener net.Listener
+	PrimaryIP       string
+	BackupID        string
 }
-
-

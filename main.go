@@ -1,17 +1,18 @@
 package main
 
 import (
+	"flag"
 	"heisprosjekt75/Driver-go/elevio"
 	"heisprosjekt75/Elevator"
-	"heisprosjekt75/Messages/MessageHandling"
+	mainutilities "heisprosjekt75/MainUtilities"
+	messagelogic "heisprosjekt75/Messages/MessageHandling"
+	messagestypes "heisprosjekt75/Messages/MessageTypes"
 	"heisprosjekt75/Network-go/network"
+	sendworldview "heisprosjekt75/Network-go/network/SendWorldView"
 	"heisprosjekt75/Network-go/network/bcast"
 	"heisprosjekt75/Network-go/network/localip"
-	"heisprosjekt75/Network-go/network/SendWorldView"
-	"heisprosjekt75/Messages/MessageTypes"
-	"heisprosjekt75/MainUtilities"
+	"log"
 	"time"
-	"flag"
 )
 
 func main() {
@@ -21,7 +22,7 @@ func main() {
 	const (
 		d            = 500 * time.Millisecond
 		brodcastPort = 43452
-		TCPPort      = "3001"
+		TCPPort      = "3000"
 	)
 
 	flag.StringVar(&stableID, "id", "", "stable elevator id (A/B/C)")
@@ -76,6 +77,7 @@ func main() {
 			Elevator.DoorTimeout(doorStartTimerCh, e)
 
 		case p := <-peerUpdateCh:
+			log.Printf("updating peer ")
 			mainutilities.CasePeerUpdateCh(e, doorStartTimerCh, TCPPort, TCPRx, p, TCPWorldViewCh)
 
 		case PrimaryIdIp := <-UDPPrimaryIPIDRx:

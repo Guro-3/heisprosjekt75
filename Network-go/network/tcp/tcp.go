@@ -3,21 +3,22 @@ package tcp
 import (
 	"bufio"
 	"encoding/json"
+	messagestypes "heisprosjekt75/Messages/MessageTypes"
 	"heisprosjekt75/types"
 	"io"
 	"log"
 	"net"
 	"strings"
-	"time"
-	"heisprosjekt75/Messages/MessageTypes"
 	"sync"
+	"time"
 )
-
 
 var (
 	nodeConnMap   = make(map[string]net.Conn)
 	nodeConnMapMu sync.RWMutex
 )
+
+
 
 func tcpReadLoop(conn net.Conn, incomingTCP chan messagestypes.Message) {
 	defer conn.Close()
@@ -50,11 +51,17 @@ func tcpReadLoop(conn net.Conn, incomingTCP chan messagestypes.Message) {
 }
 
 func TcpStartPrimary(port string, incomingTCP chan messagestypes.Message, e *types.Elevator) {
+
+	if e.Ps.PrimaryListener != nil {
+		return
+	}
+
 	listener, err := net.Listen("tcp", ":"+port)
 	if err != nil {
 		log.Println("Error creating listener:", err)
 		return
 	}
+	e.Ps.PrimaryListener = listener
 	go func() {
 		for {
 			conn, err := listener.Accept()
@@ -106,9 +113,9 @@ func tcpHandleNewNode(conn net.Conn, incomingTCP chan messagestypes.Message, e *
 
 	writer := bufio.NewWriter(conn)
 	welcome := messagestypes.Message{
-		Type:   messagestypes.Msgwelcome,
-		NodeID: e.MyID,
-		MessageData: messagestypes.WelcomeMessage{NodeID: msg.NodeID,},
+		Type:        messagestypes.Msgwelcome,
+		NodeID:      e.MyID,
+		MessageData: messagestypes.WelcomeMessage{NodeID: msg.NodeID},
 	}
 
 	jsonMsg, _ := json.Marshal(welcome)
@@ -142,9 +149,9 @@ func TcpConnectToPrimary(port string, e *types.Elevator, incomingTCP chan messag
 		writer := bufio.NewWriter(conn)
 
 		hello := messagestypes.Message{
-			Type:   messagestypes.Msghello,
-			NodeID: e.MyID,
-			MessageData: messagestypes.HelloMessage{Role: types.TypesRoleToString(e.Ps.Role), StableID: e.StableID,},
+			Type:        messagestypes.Msghello,
+			NodeID:      e.MyID,
+			MessageData: messagestypes.HelloMessage{Role: types.TypesRoleToString(e.Ps.Role), StableID: e.StableID},
 		}
 
 		jsonMsg, _ := json.Marshal(hello)
@@ -152,7 +159,7 @@ func TcpConnectToPrimary(port string, e *types.Elevator, incomingTCP chan messag
 		writer.Flush()
 
 		go tcpReadLoop(conn, incomingTCP)
-		break
+		return
 	}
 }
 
@@ -183,5 +190,3 @@ func SendTCP(receiverID string, message messagestypes.Message, ps *types.PeerSta
 	writer.WriteString(string(jsonMessage) + "\n")
 	writer.Flush()
 }
-
-

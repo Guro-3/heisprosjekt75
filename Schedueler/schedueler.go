@@ -79,7 +79,7 @@ func PrimarySchedueler(e *types.Elevator, doorStartTimerCh chan int) {
 					if id == e.MyID {
 						Elevator.HandleAssignedOrder(e, f, elevio.ButtonType(b), doorStartTimerCh)
 					} else {
-						delegateOrders(id, e, btn, types.WorldView)
+						delegateOrders(id, e, btn)
 					}
 				}
 			}

@@ -11,9 +11,6 @@ func RoleElection(peerUpdate peers.PeerUpdate, e *types.Elevator, doorStartTimer
 	e.Ps.PrevRole = e.Ps.Role
 	peerList := peerUpdate.Peers
 
-	e.Ps.PrimaryID = ""
-	e.Ps.PrimaryIP = ""
-
 	if len(peerList) == 1 {
 		e.Ps.PrimaryID = e.MyID
 		e.Ps.BackupID = ""
