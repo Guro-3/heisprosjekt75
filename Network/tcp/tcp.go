@@ -69,7 +69,7 @@ func TcpStartPrimary(port string, incomingTCP chan messagestypes.Message, e *typ
 					return
 				}
 				log.Println("Error accepting TCP connection:", err)
-				break
+				continue
 			}
 			go tcpHandleNewNode(conn, incomingTCP, e)
 		}
