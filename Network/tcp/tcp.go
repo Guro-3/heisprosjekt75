@@ -133,12 +133,7 @@ func TcpConnectToPrimary(port string, e *types.Elevator, incomingTCP chan messag
 			time.Sleep(100 * time.Millisecond)
 			continue
 		}
-
-		/*if e.Ps.PrimaryConn != nil {
-			e.Ps.PrimaryConn.Close()
-			e.Ps.PrimaryConn = nil
-		}*/
-
+		
 		conn, err := net.Dial("tcp", e.Ps.PrimaryIP+":"+port)
 		if err != nil {
 			log.Println("Error connecting to primary:", err)
