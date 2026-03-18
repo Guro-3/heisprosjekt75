@@ -3,7 +3,7 @@ package tcp
 import (
 	"bufio"
 	"encoding/json"
-	"heisprosjekt75/Messages/MessageTypes"
+	messagestypes "heisprosjekt75/Messages/MessageTypes"
 	"heisprosjekt75/types"
 	"io"
 	"log"
