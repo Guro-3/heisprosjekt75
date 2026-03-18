@@ -22,7 +22,6 @@ var (
 func tcpReadLoop(conn net.Conn, incomingTCP chan messagestypes.Message) {
 
 	reader := bufio.NewReader(conn)
-	
 
 	for {
 		line, err := reader.ReadString('\n')
