@@ -19,6 +19,7 @@ var (
 )
 
 func tcpReadLoop(conn net.Conn, incomingTCP chan messagestypes.Message) {
+	defer conn.Close()
 	reader := bufio.NewReader(conn)
 
 	for {
@@ -26,7 +27,9 @@ func tcpReadLoop(conn net.Conn, incomingTCP chan messagestypes.Message) {
 		if err != nil {
 			if err == io.EOF {
 				log.Println("Connection closed by client.")
-			} 
+			} else {
+				log.Println("Message reading error in read loop:", err)
+			}
 			return
 		}
 
@@ -74,7 +77,6 @@ func tcpHandleNewNode(conn net.Conn, incomingTCP chan messagestypes.Message, e *
 	line, err := reader.ReadString('\n')
 	if err != nil {
 		log.Println("Message reading error in handleNewNode:", err)
-		conn.Close()
 		return
 	}
 
@@ -87,7 +89,6 @@ func tcpHandleNewNode(conn net.Conn, incomingTCP chan messagestypes.Message, e *
 
 	if msg.Type != messagestypes.Msghello {
 		log.Println("expected Msghello, got", msg.Type)
-		conn.Close()
 		return
 	}
 
@@ -95,7 +96,6 @@ func tcpHandleNewNode(conn net.Conn, incomingTCP chan messagestypes.Message, e *
 	helloBytes, _ := json.Marshal(msg.MessageData)
 	if err := json.Unmarshal(helloBytes, &hello); err != nil {
 		log.Println("unmarshal hello data failed:", err)
-		conn.Close()
 		return
 	}
 
