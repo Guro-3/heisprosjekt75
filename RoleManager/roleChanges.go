@@ -12,12 +12,12 @@ func RolesChanges(port string, incomingTCP chan messagestypes.Message, e *types.
 			e.Ps.PrimaryListener.Close()
 			e.Ps.PrimaryListener = nil
 		}
-	}
+	}*/
 
 	if e.Ps.PrimaryConn != nil {
 		e.Ps.PrimaryConn.Close()
 		e.Ps.PrimaryConn = nil
-	}*/
+	}
 
 	if e.Ps.Role == types.RolePrimary {
 		tcp.TcpStartPrimary(port, incomingTCP, e)
