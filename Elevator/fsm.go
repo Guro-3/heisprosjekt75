@@ -40,13 +40,13 @@ func FsmStartAction(e *types.Elevator, doorStartTimerCh chan int) {
 	if e.State == types.Moving {
 		return
 	}
-	for {
+	/*for {
 		if e.State == types.DoorOpen {
 			continue
 		} else {
 			break
 		}
-	}
+	}*/
 
 	Dir, Nextstate := chooseDirection(e)
 
