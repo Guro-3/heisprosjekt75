@@ -3,6 +3,7 @@ package tcp
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	messagestypes "heisprosjekt75/Messages/MessageTypes"
 	"heisprosjekt75/types"
 	"io"
@@ -18,8 +19,18 @@ var (
 	nodeConnMapMu sync.RWMutex
 )
 
-func tcpReadLoop(conn net.Conn, incomingTCP chan messagestypes.Message) {
-	defer conn.Close()
+func tcpReadLoop(conn net.Conn, incomingTCP chan messagestypes.Message, nodeID string) {
+	defer func() {
+		// Remove stale connection
+		nodeConnMapMu.Lock()
+		if existingConn, ok := nodeConnMap[nodeID]; ok && existingConn == conn {
+			delete(nodeConnMap, nodeID)
+			log.Println("Removed stale connection for node:", nodeID)
+		}
+		nodeConnMapMu.Unlock()
+		conn.Close()
+	}()
+
 	reader := bufio.NewReader(conn)
 
 	for {
@@ -64,8 +75,11 @@ func TcpStartPrimary(port string, incomingTCP chan messagestypes.Message, e *typ
 		for {
 			conn, err := listener.Accept()
 			if err != nil {
+				if errors.Is(err, net.ErrClosed) {
+					return
+				}
 				log.Println("Error accepting TCP connection:", err)
-				continue
+				break
 			}
 			go tcpHandleNewNode(conn, incomingTCP, e)
 		}
@@ -120,7 +134,7 @@ func tcpHandleNewNode(conn net.Conn, incomingTCP chan messagestypes.Message, e *
 	writer.Flush()
 
 	handleRestoreCabOrders(e, msg.NodeID, hello.StableID)
-	go tcpReadLoop(conn, incomingTCP)
+	go tcpReadLoop(conn, incomingTCP, msg.NodeID)
 }
 
 func TcpConnectToPrimary(port string, e *types.Elevator, incomingTCP chan messagestypes.Message) {
@@ -155,7 +169,7 @@ func TcpConnectToPrimary(port string, e *types.Elevator, incomingTCP chan messag
 		writer.WriteString(string(jsonMsg) + "\n")
 		writer.Flush()
 
-		go tcpReadLoop(conn, incomingTCP)
+		go tcpReadLoop(conn, incomingTCP, e.MyID)
 		return
 	}
 }
