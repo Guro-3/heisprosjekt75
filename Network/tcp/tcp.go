@@ -19,17 +19,7 @@ var (
 	nodeConnMapMu sync.RWMutex
 )
 
-func tcpReadLoop(conn net.Conn, incomingTCP chan messagestypes.Message, nodeID string) {
-	defer func() {
-		// Remove stale connection
-		nodeConnMapMu.Lock()
-		if existingConn, ok := nodeConnMap[nodeID]; ok && existingConn == conn {
-			delete(nodeConnMap, nodeID)
-			log.Println("Removed stale connection for node:", nodeID)
-		}
-		nodeConnMapMu.Unlock()
-		conn.Close()
-	}()
+func tcpReadLoop(conn net.Conn, incomingTCP chan messagestypes.Message) {
 
 	reader := bufio.NewReader(conn)
 
@@ -134,7 +124,7 @@ func tcpHandleNewNode(conn net.Conn, incomingTCP chan messagestypes.Message, e *
 	writer.Flush()
 
 	handleRestoreCabOrders(e, msg.NodeID, hello.StableID)
-	go tcpReadLoop(conn, incomingTCP, msg.NodeID)
+	go tcpReadLoop(conn, incomingTCP)
 }
 
 func TcpConnectToPrimary(port string, e *types.Elevator, incomingTCP chan messagestypes.Message) {
@@ -169,7 +159,7 @@ func TcpConnectToPrimary(port string, e *types.Elevator, incomingTCP chan messag
 		writer.WriteString(string(jsonMsg) + "\n")
 		writer.Flush()
 
-		go tcpReadLoop(conn, incomingTCP, e.MyID)
+		go tcpReadLoop(conn, incomingTCP)
 		return
 	}
 }
