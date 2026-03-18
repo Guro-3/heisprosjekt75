@@ -19,15 +19,10 @@ var (
 	nodeConnMapMu sync.RWMutex
 )
 
-func tcpReadLoop(conn net.Conn, incomingTCP chan messagestypes.Message, nodeID string) {
+func tcpReadLoop(conn net.Conn, incomingTCP chan messagestypes.Message) {
 
 	reader := bufio.NewReader(conn)
-	defer func() {
-		nodeConnMapMu.Lock()
-		delete(nodeConnMap, nodeID)
-		nodeConnMapMu.Unlock()
-		conn.Close()
-	}()
+	
 
 	for {
 		line, err := reader.ReadString('\n')
@@ -130,7 +125,7 @@ func tcpHandleNewNode(conn net.Conn, incomingTCP chan messagestypes.Message, e *
 	writer.Flush()
 
 	handleRestoreCabOrders(e, msg.NodeID, hello.StableID)
-	go tcpReadLoop(conn, incomingTCP,msg.NodeID)
+	go tcpReadLoop(conn, incomingTCP)
 }
 
 func TcpConnectToPrimary(port string, e *types.Elevator, incomingTCP chan messagestypes.Message) {
@@ -165,7 +160,7 @@ func TcpConnectToPrimary(port string, e *types.Elevator, incomingTCP chan messag
 		writer.WriteString(string(jsonMsg) + "\n")
 		writer.Flush()
 
-		go tcpReadLoop(conn, incomingTCP,e.MyID)
+		go tcpReadLoop(conn, incomingTCP)
 		return
 	}
 }
