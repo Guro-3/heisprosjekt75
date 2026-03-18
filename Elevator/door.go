@@ -40,7 +40,7 @@ func DoorTimeout(doorStartTimerCh chan int, e *types.Elevator) {
 		doorStartTimerCh <- types.TimeDoorOpenDuration
 		return
 	}
-
+	e.State = types.Idle
 	elevio.SetDoorOpenLamp(false)
 	FsmStartAction(e, doorStartTimerCh)
 }
