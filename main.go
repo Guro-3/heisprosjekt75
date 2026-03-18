@@ -23,7 +23,7 @@ func main() {
 	const (
 		d            = 500 * time.Millisecond
 		brodcastPort = 43452
-		TCPPort      = "3002"
+		TCPPort      = "3000"
 	)
 
 	flag.StringVar(&stableID, "id", "", "stable elevator id (A/B/C)")
